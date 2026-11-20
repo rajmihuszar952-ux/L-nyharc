@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lényharc – gyűjtögetős kártyajáték</title>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#12222a;--panel:#1c3440;--line:#2e4f5e;--tx:#eef3ef;--mu:#9bb3ba;--gold:#e8b04a;--t:#e5603c;--v:#3f9bd6;--f:#6aa84f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Trebuchet MS",Verdana,sans-serif;line-height:1.4}
+main{max-width:560px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:22px;margin:0}
+h2{font-size:17px;margin:18px 0 8px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.coins{background:var(--panel);border:1px solid var(--gold);color:var(--gold);padding:5px 12px;border-radius:20px;font-weight:bold}
+nav{display:flex;gap:6px;margin-bottom:10px}
+nav button{flex:1;padding:10px 4px;background:var(--panel);color:var(--mu);border:1px solid var(--line);border-radius:10px;font:inherit;font-size:14px}
+nav button.on{background:var(--gold);color:#1b1608;border-color:var(--gold);font-weight:bold}
+button{cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn{display:block;width:100%;padding:13px;border:0;border-radius:12px;background:var(--gold);color:#1b1608;font:inherit;font-weight:bold;font-size:16px;margin-top:12px}
+.btn:disabled{opacity:.4}
+.btn.alt{background:var(--panel);color:var(--tx);border:1px solid var(--line)}
+.opp{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:12px;margin-bottom:8px;font:inherit}
+.opp .em{font-size:30px}
+.opp small{display:block;color:var(--mu)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.card{position:relative;background:var(--panel);border:2px solid var(--c);border-radius:12px;padding:8px 4px 6px;text-align:center;color:var(--tx);font:inherit;min-width:0}
+.card.T{--c:var(--t)}.card.V{--c:var(--v)}.card.F{--c:var(--f)}
+.card .e{line-height:1}.card .e svg{width:64px;height:64px;display:block;margin:0 auto}
+.card .n{font-size:11px;margin:2px 0;line-height:1.15;min-height:25px;display:flex;align-items:center;justify-content:center}
+.card .p{font-size:20px;font-weight:bold;color:var(--c)}
+.card .el{font-size:11px;color:var(--mu)}
+.card.R{box-shadow:0 0 0 2px var(--bg),0 0 0 4px #b9c6cc}
+.card.L{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--gold),0 0 14px var(--gold)}
+.card.sel{transform:translateY(-4px);background:#27495a}
+.card.off{opacity:.3}
+.cnt{position:absolute;top:3px;right:5px;font-size:11px;color:var(--gold)}
+.card.big{padding:16px 8px}.card.big .e svg{width:100px;height:100px}.card.big .n{font-size:15px}
+.arena{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:10px 0}
+.vs{font-weight:bold;color:var(--mu)}
+.score{display:flex;justify-content:space-around;background:var(--panel);border-radius:12px;padding:8px;margin-bottom:6px}
+.msg{background:var(--panel);border-radius:12px;padding:10px;text-align:center;margin:6px 0}
+.win{color:#8fd16b}.lose{color:#ff8a70}.draw{color:var(--mu)}
+.hint{color:var(--mu);font-size:13px}
+.hide{display:none}
+@keyframes br{50%{transform:scale(1.05)}}@media (prefers-reduced-motion:no-preference){.card{transition:transform .15s}.card .e svg{animation:br 3s ease-in-out infinite}}
+.card.M{--c:#9fb3c2}.card.G{--c:var(--gold)}.st{color:var(--gold)}.opp.lock{opacity:.4}.opp:disabled{opacity:.45}.map{width:100%;height:auto;display:block;background:#173039;border-radius:14px}.map g:focus{outline:none}.map g:focus-visible circle{stroke:#e8b04a;stroke-width:5}.card.b1{--c:#cd7f32;background:linear-gradient(160deg,#4a3322,#241a12)}.card.b2{--c:#d5dde4;background:linear-gradient(160deg,#4a5762,#232c33)}.card.b3{--c:#ffd24a;background:linear-gradient(160deg,#5a4616,#2a210a);box-shadow:0 0 12px rgba(255,210,74,.6)}
+.card.sel{outline:3px solid #fff;transform:translateY(-4px)}
+.card .tr{margin:-8px -4px 4px;padding:2px 0;font-size:11px;font-weight:bold;letter-spacing:.1em;color:#1b1608;background:var(--c);border-radius:9px 9px 0 0}.card.big .tr{margin:-16px -8px 6px;font-size:13px;padding:3px 0}
+.card .cnt{top:24px;color:#fff;background:#0008;border-radius:8px;padding:0 5px;z-index:1}
+.card.no .e,.card.no .n,.card.no .p,.card.no .el,.card.no .tr{opacity:.4}.card.no .e svg{filter:grayscale(1)}
+.nm{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-12deg);background:#000b;border:1px solid #fff6;color:#fff;font-size:11px;font-weight:bold;padding:3px 8px;border-radius:8px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.chip{padding:6px 10px;border-radius:16px;border:1px solid var(--line);background:var(--panel);color:var(--tx);font:inherit;font-size:13px}.chip.on{background:var(--gold);color:#1b1608;border-color:var(--gold)}
+@media (prefers-reduced-motion:no-preference){
+.card.hi.eT .e{position:relative}
+.card.hi.eT .e::before,.card.hi.eT .e::after{content:'🔥';position:absolute;left:50%;bottom:35%;font-size:16px;opacity:0;pointer-events:none}
+.card.hi.eT .e::before{animation:fl 1.4s ease-out infinite}
+.card.hi.eT .e::after{font-size:13px;animation:fl2 1.4s ease-out .7s infinite}
+@keyframes fl{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(30px,-36px) scale(1.3)}}
+@keyframes fl2{0%{opacity:0;transform:translate(0,0) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(-30px,-36px) scale(1.3)}}
+.card.hi.eF{animation:quake 1.6s linear infinite}
+@keyframes quake{0%,32%,100%{transform:translate(0,0)}3%{transform:translate(-2px,1px) rotate(-.7deg)}7%{transform:translate(2px,-1px) rotate(.7deg)}11%{transform:translate(-2px,0)}15%{transform:translate(2px,1px) rotate(.5deg)}19%{transform:translate(-1px,-1px)}23%{transform:translate(1px,1px)}27%{transform:translate(-1px,0)}}
+.card.hi.eV::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:repeating-linear-gradient(100deg,transparent 0 7px,rgba(143,216,255,.55) 7px 8px);background-size:20px 20px;animation:rain .45s linear infinite}
+@keyframes rain{to{background-position:-6px 20px}}
+}
+
+.card.b4{--c:#6fe8ff;background:linear-gradient(160deg,#17586a,#0a2330);box-shadow:0 0 14px rgba(111,232,255,.75),inset 0 0 12px rgba(180,250,255,.25)}
+.hd{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0 2px}
+@media (prefers-reduced-motion:no-preference){.card.b4::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.38) 50%,transparent 65%);background-size:250% 100%;animation:shine 2.6s linear infinite}
+@keyframes shine{from{background-position:150% 0}to{background-position:-100% 0}}}
+</style>
+</head>
+<body>
+<main>
+<div class="hd"><div class="top"><h1>🐉 Lényharc</h1><div class="coins" id="coins"></div></div>
+<nav id="nav"></nav></div>
+<div id="app"></div>
+</main>
+<script>
+var E={T:{n:'Tűz',i:'🔥'},V:{n:'Víz',i:'💧'},F:{n:'Föld',i:'🌿'},M:{n:'Fém',i:'⚙️'}};
+var BS={T:'F',V:'T',F:'VZ',M:'TVF',Z:'MTV'};E.Z={n:'Varázs',i:'🔮'};
+var C=[['Tengerimalac','mal','F',12,'C'],['Szivacska','sz','V',14,'C'],['Pinkbunny','pb','F',15,'C'],['Tűzróka','ro','T',16,'C'],['Lazac','lz','V',17,'C'],['Panda','pa','F',19,'C'],
+['Sellő','se','V',21,'R'],['Krokodil','kd','V',24,'R'],['Ninja','nj','TF',25,'R'],['Firekong','fk','T',26,'R'],['Robot','rb','M',27,'R'],['Kígyósárkány','ks','T',28,'R'],
+['Megabrock','mb','F',30,'L'],['Főnix','fn','T',33,'L'],['Arany sárkány','ad','TVF',36,'L'],['Kaktusz','kt','F',13,'C'],['Tűzmanó','tm','T',23,'R'],['Autó','au','M',29,'R'],['Cápa','cp','V',32,'L'],['Tűzoroszlán','to','T',35,'L'],['TV','tv','M',28,'R'],['Nap','nap','T',34,'L'],['Fireszív','fh','T',24,'R'],['Hullám','hu','V',20,'R'],['Hegy','hg','F',31,'L'],['Bálna','bl','V',0,'R'],['Víziszörny','vs','V',0,'R'],['Megalodon','mg','V',0,'L'],['Kőmanó','km','F',0,'C'],['Dinó','di','F',0,'R'],['Boszorkány','bo','Z',0,'L'],['Vakond','vk','F',0,'C'],['Rák','rk','V',0,'C'],['Pingvin','pg','V',0,'C'],['Tűzcsibe','tc','T',0,'C'],['Parázskutya','pk','T',0,'C'],['Sünike','sn','F',0,'R'],['Tatu','ta','F',0,'R'],['Delfin','dl','V',0,'R'],['Medúza','md','V',0,'R'],['Szalamandra','sa','T',0,'R'],['Lávaboci','lb','T',0,'R'],['Magmacsiga','mc','T',0,'R'],['Szikra','szk','T',0,'R'],['Vaslovag','vl','M',0,'R'],['Robotkutya','rkk','M',0,'R'],['Lángfarkas','lf','T',0,'L'],['Polip','po','V',0,'L'],['Elemtündér','et','TVF',0,'L'],['Liababa','lia','Z',0,'L']];
+var O=[['Bátor Pocok','🐭','Gyenge lények','C',[1]],['Erdei Remete','🧙','Gyakori és ritka lények','CR',[1]],['Tengerész','🧜','Ritka lények','R',[1]],['Sárkánymester','🐲','Ritka és legendás lények','RL',[1]],
+['Lávalovag','🛡️','Erősebb kártyák','CRL',[1,2]],['Viharkapitány','🏴‍☠️','Ritka és legendás lények','RL',[2,3]],['Kőfaragó Mester','⛏️','Kemény ellenfél','RL',[2,3]],['Aranykirálynő','👑','Legendás lények','L',[2,3]],
+['Hegyi Vadász','🏹','Ritka és legendás lények','RL',[2,3],0],['Sivatagi Kereskedő','🐪','Ritka és legendás lények','RL',[2,3],0],['Mélytengeri Búvár','🤿','Erős lények','RL',[3],0],['Jégkirály','🧊','Legendás lények','L',[3],3],
+['Viharidéző','⛈️','Erős lények','RL',[3],1],['Gépmester','🔧','Erős lények','RL',[3],1],['Lávamágus','🌋','Erős lények','RL',[3],2],['Árnykirály','🌑','Legendás lények','L',[3],6],
+['Csillagőr','⭐','Legendás lények','L',[3],3],['Időutazó','⌛','Legendás lények','L',[3],4],['Sárkánylovag','🐲','Legendás lények','L',[3],5],['Sárkánycsászár','🔱','Legendás lények','L',[3],10],
+['Fagyőr','❄️','Erős lények','RL',[3,4],0],
+['Barlangász','🦇','Erős lények','RL',[3,4],0],
+['Jégszobrász','🧊','Erős lények','RL',[3,4],0],
+['Fagykirálynő','👸','Legendás lények','L',[3,4],0],
+['Kagylóász','🐚','Erős lények','RL',[3,4],0],
+['Hullámlovas','🏄','Erős lények','RL',[3,4],0],
+['Korallkertész','🐙','Erős lények','RL',[3,4],0],
+['A Mélység Ura','🦑','Legendás lények','L',[3,4],0],
+['Felhőpásztor','☁️','Legendás lények','L',[3,4],0],
+['Villámkovács','⚡','Legendás lények','L',[3,4],0],
+['Szélmester','🌪️','Legendás lények','L',[3,4],0],
+['Viharkirály','🌩️','Legendás lények','L',[3,4],0],
+['Kristályász','💎','Legendás lények','L',[3,4],0],
+['Bányamester','⛏️','Legendás lények','L',[3,4],0],
+['Drágakő-őr','🔷','Legendás lények','L',[3,4],0],
+['Gyémántkirály','💠','Legendás lények','L',[3,4],0],
+['Csillagász','🔭','Legendás lények','L',[3,4],0],
+['Holdőr','🌙','Legendás lények','L',[3,4],0],
+['Napvadász','☀️','Legendás lények','L',[3,4],0],
+['Az Örök Császár','👑','Legendás lények','L',[3,4],0],
+['Mocsárjáró','🥾','Ritka és legendás lények','RL',[3,4],0],
+['Gombász','🍄','Ritka és legendás lények','RL',[3,4],0],
+['Ködboszorka','🌫️','Ritka és legendás lények','RL',[3,4],0],
+['Mocsárkirály','🐊','Legendás lények','L',[3,4],0],
+['Liánlengő','🐒','Ritka és legendás lények','RL',[3,4],0],
+['Papagájidomár','🦜','Ritka és legendás lények','RL',[3,4],0],
+['Orchideaőr','🌺','Ritka és legendás lények','RL',[3,4],0],
+['Dzsungel Ura','🐆','Legendás lények','L',[3,4],0],
+['Régész','🏺','Ritka és legendás lények','RL',[3,4],0],
+['Romkutató','🔦','Ritka és legendás lények','RL',[3,4],0],
+['Kőszobor-őr','🗿','Ritka és legendás lények','RL',[3,4],0],
+['Ősi Fáraó','🔺','Legendás lények','L',[3,4],0],
+['Szigetlakó','🥥','Ritka és legendás lények','RL',[3,4],0],
+['Gőzmester','♨️','Ritka és legendás lények','RL',[3,4],0],
+['Hamukutató','🌋','Ritka és legendás lények','RL',[3,4],0],
+['Vulkánisten','🔥','Legendás lények','L',[3,4],0],
+['Szellemvadász','👻','Ritka és legendás lények','RL',[3,4],0],
+['Inas','🕯️','Ritka és legendás lények','RL',[3,4],0],
+['Kastélyúr','🏰','Ritka és legendás lények','RL',[3,4],0],
+['Vámpírgróf','🧛','Legendás lények','L',[3,4],0],
+['Karavánvezér','🐫','Ritka és legendás lények','RL',[3,4],0],
+['Homokvarázsló','⏳','Ritka és legendás lények','RL',[3,4],0],
+['Skorpiómester','🦂','Ritka és legendás lények','RL',[3,4],0],
+['Szfinx','🦁','Legendás lények','L',[3,4],0],
+['Halász','🎣','Ritka és legendás lények','RL',[3,4],0],
+['Tótündér','🧚','Ritka és legendás lények','RL',[3,4],0],
+['Jégtörő','🪓','Ritka és legendás lények','RL',[3,4],0],
+['Tündérkirálynő','👸','Legendás lények','L',[3,4],0],
+['Szerelő','🔩','Ritka és legendás lények','RL',[3,4],0],
+['Gőzgép-őr','🚂','Ritka és legendás lények','RL',[3,4],0],
+['Drónpilóta','🚁','Ritka és legendás lények','RL',[3,4],0],
+['Gépóriás','🤖','Legendás lények','L',[3,4],0],
+['Erdész','🪵','Ritka és legendás lények','RL',[3,4],0],
+['Farkasdomár','🐺','Ritka és legendás lények','RL',[3,4],0],
+['Bagolylovas','🦉','Ritka és legendás lények','RL',[3,4],0],
+['Erdőszellem','🌲','Legendás lények','L',[3,4],0],
+['Holdpap','🌙','Ritka és legendás lények','RL',[3,4],0],
+['Csillagfonó','🕸️','Ritka és legendás lények','RL',[3,4],0],
+['Álomőr','💤','Ritka és legendás lények','RL',[3,4],0],
+['Holdistennő','🌕','Legendás lények','L',[3,4],0],
+['Kovács','🔨','Ritka és legendás lények','RL',[3,4],0],
+['Tűznyelő','🔥','Ritka és legendás lények','RL',[3,4],0],
+['Salakmester','🪨','Ritka és legendás lények','RL',[3,4],0],
+['Magmaóriás','🌋','Legendás lények','L',[3,4],0],
+['Hegymászó','🧗','Ritka és legendás lények','RL',[3,4],0],
+['Jégvadász','🏔️','Ritka és legendás lények','RL',[3,4],0],
+['Hóember-őr','⛄','Ritka és legendás lények','RL',[3,4],0],
+['Fagyóriás','🥶','Legendás lények','L',[3,4],0],
+['Hídőr','🌉','Ritka és legendás lények','RL',[3,4],0],
+['Színvarázsló','🎨','Ritka és legendás lények','RL',[3,4],0],
+['Felhőlovas','🦄','Ritka és legendás lények','RL',[3,4],0],
+['Szivárványsárkány','🌈','Legendás lények','L',[3,4],0],
+['Gyöngyhalász','🦪','Ritka és legendás lények','RL',[3,4],0],
+['Roncskutató','⚓','Ritka és legendás lények','RL',[3,4],0],
+['Tengeri Pap','🐚','Ritka és legendás lények','RL',[3,4],0],
+['Atlantisz Királya','🐙','Legendás lények','L',[3,4],0],
+['Villámfogó','⚡','Ritka és legendás lények','RL',[3,4],0],
+['Viharlovas','🌩️','Ritka és legendás lények','RL',[3,4],0],
+['Mennydörgő','🥁','Ritka és legendás lények','RL',[3,4],0],
+['Mennydörgés Ura','⛈️','Legendás lények','L',[3,4],0],
+['Óraműves','⏰','Ritka és legendás lények','RL',[3,4],0],
+['Időpap','⌛','Ritka és legendás lények','RL',[3,4],0],
+['Múltidéző','📜','Ritka és legendás lények','RL',[3,4],0],
+['Idő Őre','🕰️','Legendás lények','L',[3,4],0],
+['Árnyjáró','👤','Ritka és legendás lények','RL',[3,4],0],
+['Sötétmágus','🔮','Ritka és legendás lények','RL',[3,4],0],
+['Rémálomőr','😈','Ritka és legendás lények','RL',[3,4],0],
+['Árnyak Királynője','🖤','Legendás lények','L',[3,4],0],
+['Űrutazó','🚀','Ritka és legendás lények','RL',[3,4],0],
+['Csillagvadász','🌠','Ritka és legendás lények','RL',[3,4],0],
+['Üstökös-lovas','☄️','Ritka és legendás lények','RL',[3,4],0],
+['Kozmikus Sárkány','🐉','Legendás lények','L',[3,4],0],
+['Sárkánylovas','🐲','Ritka és legendás lények','RL',[3,4],0],
+['Királyi Őr','🛡️','Ritka és legendás lények','RL',[3,4],0],
+['Udvari Varázsló','🧙','Ritka és legendás lények','RL',[3,4],0],
+['Sárkánytrón Ura','👑','Legendás lények','L',[3,4],0],
+['Végtelen Őr','♾️','Ritka és legendás lények','RL',[3,4],0],
+['Sorsszövő','🧵','Ritka és legendás lények','RL',[3,4],0],
+['Végzethozó','⚖️','Ritka és legendás lények','RL',[3,4],0],
+['Az Ősi Sárkánykirály','🐲','Legendás lények','L',[3,4],0],
+['Az Örökkévaló','✨','Legendás lények, jelvény jár a győzelemért','L',[3,4],0]];
+var PK=[{n:'Alap csomag',p:30,em:'📦',d:'Többnyire gyakori lények',t:[70,27,3],l:[80,17,3]},{n:'Ezüst csomag',p:60,em:'🥈',d:'Jó esély ritka lényekre',t:[40,45,15],l:[50,38,12]},{n:'Arany csomag',p:100,em:'🥇',d:'Sok ritka és legendás lény',t:[15,50,35],l:[25,45,30]},{n:'Gyémánt láda',p:180,em:'💎',d:'Csak arany szintű kártya',t:[5,45,50],l:[0,0,100]},{n:'Smaragd láda',p:500,em:'💚',d:'Csak gyémánt kártya (100–150 erő)',t:[5,40,55],l:[0,0,0,100],need:5}];
+function sv(b){return '<svg viewBox="0 0 100 100">'+b+'</svg>'}
+function ey(x,y,r){return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#222"/><circle cx="'+(x+r*.35)+'" cy="'+(y-r*.35)+'" r="'+(r*.35)+'" fill="#fff"/>'}
+function ch(x,y){return '<circle cx="'+x+'" cy="'+y+'" r="4" fill="#ff8fa3" opacity=".6"/>'}
+function sm(x,y,w){return '<path d="M'+x+' '+y+'q'+w/2+' '+w/3+' '+w+' 0" stroke="#3a2a22" stroke-width="2" fill="none" stroke-linecap="round"/>'}
+var ART={
+mal:'<svg viewBox="0 0 100 100"><path d="M18 92q6-14 10 0M26 92q4-18 10 0M70 92q6-16 10 0M78 92q4-12 8 0" fill="#5d9a45"/><ellipse cx="50" cy="88" rx="30" ry="6" fill="#4d7a3a"/><ellipse cx="25" cy="36" rx="9" ry="12" fill="#a86d34" transform="rotate(-20 25 36)"/><ellipse cx="75" cy="36" rx="9" ry="12" fill="#a86d34" transform="rotate(20 75 36)"/><ellipse cx="50" cy="58" rx="36" ry="30" fill="#c98a4b"/><ellipse cx="50" cy="68" rx="22" ry="17" fill="#f3dfc0"/><ellipse cx="34" cy="86" rx="9" ry="5" fill="#a86d34"/><ellipse cx="66" cy="86" rx="9" ry="5" fill="#a86d34"/><circle cx="37" cy="52" r="5" fill="#222"/><circle cx="63" cy="52" r="5" fill="#222"/><circle cx="38.5" cy="50.5" r="1.6" fill="#fff"/><circle cx="64.5" cy="50.5" r="1.6" fill="#fff"/><circle cx="28" cy="64" r="5" fill="#f19a9a" opacity=".7"/><circle cx="72" cy="64" r="5" fill="#f19a9a" opacity=".7"/><ellipse cx="50" cy="62" rx="4" ry="3" fill="#d9707a"/><path d="M44 70q6 5 12 0" stroke="#6b4423" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+sz:'<svg viewBox="0 0 100 100"><path d="M50 6q6 8 0 12q-6-4 0-12" fill="#8fd8ff"/><ellipse cx="14" cy="62" rx="8" ry="11" fill="#4fbfc9" transform="rotate(25 14 62)"/><ellipse cx="86" cy="62" rx="8" ry="11" fill="#4fbfc9" transform="rotate(-25 86 62)"/><rect x="20" y="20" width="60" height="66" rx="24" fill="#6fd3da"/><circle cx="30" cy="32" r="4" fill="#3fb3c0"/><circle cx="68" cy="28" r="5" fill="#3fb3c0"/><circle cx="72" cy="74" r="4" fill="#3fb3c0"/><circle cx="28" cy="76" r="5" fill="#3fb3c0"/><circle cx="50" cy="26" r="3" fill="#3fb3c0"/><circle cx="39" cy="50" r="10" fill="#fff"/><circle cx="61" cy="50" r="10" fill="#fff"/><circle cx="41" cy="51" r="5" fill="#2a6fb0"/><circle cx="59" cy="51" r="5" fill="#2a6fb0"/><circle cx="42.5" cy="49" r="1.8" fill="#fff"/><circle cx="60.5" cy="49" r="1.8" fill="#fff"/><circle cx="28" cy="62" r="4" fill="#ff9fb0" opacity=".7"/><circle cx="72" cy="62" r="4" fill="#ff9fb0" opacity=".7"/><path d="M40 66q10 10 20 0" stroke="#23707a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+ro:'<svg viewBox="0 0 100 100"><path d="M82 84C98 74 99 52 90 38C88 52 80 58 76 66Z" fill="#ffb02e"/><path d="M84 84C92 76 94 64 90 54C88 64 84 70 80 74Z" fill="#ff6a2b"/><polygon points="16,42 22,8 46,30" fill="#f07a2a"/><polygon points="84,42 78,8 54,30" fill="#f07a2a"/><polygon points="24,34 26,18 38,30" fill="#ffd0a0"/><polygon points="76,34 74,18 62,30" fill="#ffd0a0"/><ellipse cx="50" cy="56" rx="35" ry="29" fill="#f07a2a"/><path d="M16 62Q34 52 50 70Q66 52 84 62Q72 88 50 88Q28 88 16 62Z" fill="#fff3e0"/><ellipse cx="37" cy="54" rx="5" ry="6" fill="#2b1a14"/><ellipse cx="63" cy="54" rx="5" ry="6" fill="#2b1a14"/><circle cx="38.5" cy="52" r="1.8" fill="#fff"/><circle cx="64.5" cy="52" r="1.8" fill="#fff"/><ellipse cx="50" cy="68" rx="5" ry="3.5" fill="#2b1a14"/><path d="M44 74q6 5 12 0" stroke="#2b1a14" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M46 14q4-10 8 0q-4 4-8 0" fill="#ffb02e"/></svg>',
+mb:'<svg viewBox="0 0 100 100"><ellipse cx="11" cy="62" rx="9" ry="15" fill="#77818b"/><ellipse cx="89" cy="62" rx="9" ry="15" fill="#77818b"/><rect x="28" y="82" width="16" height="12" rx="4" fill="#6a747e"/><rect x="56" y="82" width="16" height="12" rx="4" fill="#6a747e"/><polygon points="20,40 32,14 68,14 80,40 86,76 72,90 28,90 14,76" fill="#8c96a0"/><polygon points="32,14 68,14 80,40 20,40" fill="#a3adb6"/><path d="M30 16q8-10 16-2q6-8 14 0q8-6 12 6q-20 6-42-4" fill="#6aa84f"/><path d="M60 44l-6 12l8 6M26 70l8-6" stroke="#5d666e" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="39" cy="50" r="8" fill="#fff"/><circle cx="61" cy="50" r="8" fill="#fff"/><circle cx="40" cy="52" r="4" fill="#222"/><circle cx="60" cy="52" r="4" fill="#222"/><path d="M30 40l16 4M70 40l-16 4" stroke="#4b535a" stroke-width="3" stroke-linecap="round"/><rect x="38" y="68" width="24" height="10" rx="3" fill="#3a3f45"/><polygon points="42,68 46,68 44,73" fill="#fff"/><polygon points="54,68 58,68 56,73" fill="#fff"/></svg>',
+fn:'<svg viewBox="0 0 100 100"><path d="M42 38C36 24 46 20 44 6C56 14 60 28 56 38Z" fill="#ffb02e"/><path d="M30 40C26 32 32 28 28 18C38 22 40 32 38 40Z" fill="#ff8a3d"/><path d="M70 40C74 32 68 28 72 18C62 22 60 32 62 40Z" fill="#ff8a3d"/><path d="M30 56C8 46 2 26 12 14C22 28 32 36 36 50Z" fill="#ff8a3d"/><path d="M70 56C92 46 98 26 88 14C78 28 68 36 64 50Z" fill="#ff8a3d"/><path d="M26 50C14 42 10 32 14 24C22 34 28 40 32 48Z" fill="#ffc15a"/><path d="M74 50C86 42 90 32 86 24C78 34 72 40 68 48Z" fill="#ffc15a"/><path d="M38 80C32 90 40 96 36 100C46 96 50 90 50 82ZM62 80C68 90 60 96 64 100C54 96 50 90 50 82Z" fill="#ff6a2b"/><circle cx="50" cy="60" r="24" fill="#f0602d"/><ellipse cx="50" cy="68" rx="14" ry="15" fill="#ffc15a"/><circle cx="41" cy="54" r="5" fill="#2b1a14"/><circle cx="59" cy="54" r="5" fill="#2b1a14"/><circle cx="42.5" cy="52.5" r="1.7" fill="#fff"/><circle cx="60.5" cy="52.5" r="1.7" fill="#fff"/><polygon points="45,60 55,60 50,69" fill="#ffd23f"/><circle cx="33" cy="62" r="4" fill="#ff9a8a" opacity=".7"/><circle cx="67" cy="62" r="4" fill="#ff9a8a" opacity=".7"/></svg>'};
+ART.pb=sv('<path d="M10 94q6-14 10 0M80 94q4-12 10 0" fill="#5d9a45"/><ellipse cx="34" cy="26" rx="8" ry="22" fill="#ff8fc1"/><ellipse cx="66" cy="26" rx="8" ry="22" fill="#ff8fc1"/><ellipse cx="34" cy="28" rx="4" ry="15" fill="#ffd0e6"/><ellipse cx="66" cy="28" rx="4" ry="15" fill="#ffd0e6"/><ellipse cx="50" cy="64" rx="34" ry="28" fill="#ff8fc1"/><ellipse cx="50" cy="74" rx="16" ry="12" fill="#ffd9ea"/>'+ey(38,58,5)+ey(62,58,5)+ch(28,68)+ch(72,68)+'<ellipse cx="50" cy="68" rx="4" ry="3" fill="#d94d86"/>'+sm(44,73,12)+'<ellipse cx="34" cy="90" rx="9" ry="5" fill="#e873a8"/><ellipse cx="66" cy="90" rx="9" ry="5" fill="#e873a8"/>');
+ART.lz=sv('<polygon points="78,52 98,34 94,52 98,70" fill="#f0705a"/><path d="M40 34q10-14 22 0z" fill="#f0705a"/><ellipse cx="48" cy="52" rx="34" ry="21" fill="#ff8a75"/><path d="M16 56q32 22 64-4q-8 20-32 20q-22 0-32-16z" fill="#ffd3c7"/><path d="M52 44q6 8 0 16M62 44q6 8 0 16" stroke="#e0604b" stroke-width="2" fill="none"/>'+ey(28,48,5)+ch(32,58)+sm(18,58,10)+'<circle cx="14" cy="30" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/><circle cx="22" cy="18" r="3" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.pa=sv('<rect x="82" y="40" width="6" height="52" fill="#6aa84f"/><rect x="80" y="60" width="10" height="3" fill="#4d7a3a"/><ellipse cx="50" cy="72" rx="30" ry="24" fill="#fff"/><ellipse cx="22" cy="74" rx="9" ry="14" fill="#2b2b2b"/><ellipse cx="78" cy="74" rx="9" ry="14" fill="#2b2b2b"/><circle cx="24" cy="26" r="11" fill="#2b2b2b"/><circle cx="76" cy="26" r="11" fill="#2b2b2b"/><circle cx="50" cy="44" r="29" fill="#fff"/><ellipse cx="37" cy="44" rx="8" ry="10" fill="#2b2b2b" transform="rotate(20 37 44)"/><ellipse cx="63" cy="44" rx="8" ry="10" fill="#2b2b2b" transform="rotate(-20 63 44)"/><circle cx="38" cy="43" r="3.5" fill="#fff"/><circle cx="62" cy="43" r="3.5" fill="#fff"/><circle cx="38.5" cy="43.5" r="1.8" fill="#222"/><circle cx="61.5" cy="43.5" r="1.8" fill="#222"/><ellipse cx="50" cy="54" rx="5" ry="3.5" fill="#2b2b2b"/>'+sm(44,59,12)+ch(28,56)+ch(72,56));
+ART.se=sv('<path d="M50 56C36 62 34 82 46 92L30 98H70L54 92C66 82 64 62 50 56Z" fill="#3fc1b0"/><path d="M30 98l-4-8 12 2zM70 98l4-8-12 2z" fill="#2aa597"/><path d="M26 44C20 20 40 10 50 12C60 10 80 20 74 44C76 56 70 60 66 50H34C30 60 24 56 26 44Z" fill="#7a5cd6"/><circle cx="50" cy="40" r="17" fill="#ffd9bf"/><path d="M34 36C38 24 62 24 66 36C56 30 44 30 34 36Z" fill="#7a5cd6"/>'+ey(43,42,3.5)+ey(57,42,3.5)+ch(38,48)+ch(62,48)+sm(45,49,10)+'<path d="M42 62q8 8 16 0q-8 10-16 0z" fill="#ff9fb8"/><circle cx="50" cy="15" r="5" fill="#ffd23f"/><circle cx="84" cy="30" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.kd=sv('<polygon points="24,86 30,78 36,86" fill="#4a9a3a"/><polygon points="64,86 70,78 76,86" fill="#4a9a3a"/><ellipse cx="50" cy="78" rx="34" ry="16" fill="#5aa84a"/><circle cx="32" cy="34" r="10" fill="#6cc058"/><circle cx="68" cy="34" r="10" fill="#6cc058"/><ellipse cx="50" cy="50" rx="36" ry="24" fill="#6cc058"/><ellipse cx="50" cy="62" rx="26" ry="14" fill="#a7e08f"/><circle cx="32" cy="32" r="6" fill="#fff"/><circle cx="68" cy="32" r="6" fill="#fff"/><circle cx="33" cy="33" r="3" fill="#222"/><circle cx="67" cy="33" r="3" fill="#222"/><circle cx="42" cy="58" r="2" fill="#2d6a2a"/><circle cx="58" cy="58" r="2" fill="#2d6a2a"/><path d="M30 68q20 12 40 0" stroke="#2d6a2a" stroke-width="3" fill="none" stroke-linecap="round"/><polygon points="38,69 42,69 40,75" fill="#fff"/><polygon points="58,69 62,69 60,75" fill="#fff"/><path d="M84 12q6 8 0 12q-6-4 0-12" fill="#8fd8ff"/>');
+ART.fk=sv('<ellipse cx="50" cy="94" rx="28" ry="10" fill="#b5532f"/><path d="M36 28C32 16 42 14 40 6C52 12 54 20 50 28C54 20 60 16 58 8C68 16 68 24 64 28Z" fill="#ff8a3d"/><path d="M44 28C42 20 48 18 48 14C54 18 54 24 52 28Z" fill="#ffd23f"/><circle cx="18" cy="54" r="11" fill="#b5532f"/><circle cx="82" cy="54" r="11" fill="#b5532f"/><circle cx="18" cy="54" r="6" fill="#f1cfa0"/><circle cx="82" cy="54" r="6" fill="#f1cfa0"/><circle cx="50" cy="54" r="30" fill="#b5532f"/><ellipse cx="50" cy="60" rx="22" ry="20" fill="#f1cfa0"/>'+ey(40,52,5)+ey(60,52,5)+'<circle cx="46" cy="62" r="1.8" fill="#7a3a1c"/><circle cx="54" cy="62" r="1.8" fill="#7a3a1c"/>'+sm(42,68,16)+ch(32,62)+ch(68,62));
+ART.ks=sv('<path d="M70 52q18-10 22-30q-16 4-26 20z" fill="#ff8a3d"/><path d="M16 82C14 60 66 66 62 46C60 32 42 34 44 24" stroke="#d94a2a" stroke-width="18" fill="none" stroke-linecap="round"/><path d="M16 82C14 60 66 66 62 46C60 32 42 34 44 24" stroke="#ffc15a" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="1 9"/><path d="M8 86q-4-12 4-14q2 8 8 8z" fill="#ffb02e"/><ellipse cx="50" cy="22" rx="20" ry="13" fill="#e5603c"/><polygon points="36,14 32,2 44,10" fill="#ffd23f"/><polygon points="64,14 68,2 56,10" fill="#ffd23f"/>'+ey(42,21,4)+ey(58,21,4)+'<circle cx="46" cy="28" r="1.6" fill="#7a2410"/><circle cx="54" cy="28" r="1.6" fill="#7a2410"/>');
+ART.nj=sv('<polygon points="84,84 88,90 94,86 90,92 94,98 88,94 84,100 82,94 76,98 80,92 76,86 82,90" fill="#b8c2cc"/><ellipse cx="50" cy="84" rx="26" ry="14" fill="#2b2f3a"/><circle cx="50" cy="48" r="32" fill="#2b2f3a"/><rect x="22" y="40" width="56" height="22" rx="10" fill="#ffd9bf"/><path d="M18 32h64v9H18z" fill="#e5403c"/><path d="M80 34l16 4-12 6zM80 40l14 10-14-2z" fill="#e5403c"/>'+ey(38,51,5)+ey(62,51,5)+'<path d="M30 45l12 3M70 45l-12 3" stroke="#222" stroke-width="3" stroke-linecap="round"/>'+ch(30,58)+ch(70,58));
+ART.rb=sv('<rect x="48" y="4" width="4" height="14" fill="#8a96a3"/><circle cx="50" cy="6" r="5" fill="#ff5a5a"/><rect x="18" y="18" width="64" height="52" rx="14" fill="#aab6c4"/><rect x="26" y="28" width="48" height="32" rx="10" fill="#2a3a4a"/><circle cx="38" cy="44" r="7" fill="#7fe9ff"/><circle cx="62" cy="44" r="7" fill="#7fe9ff"/><circle cx="40" cy="42" r="2.4" fill="#fff"/><circle cx="64" cy="42" r="2.4" fill="#fff"/><path d="M40 54q10 6 20 0" stroke="#7fe9ff" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="8" y="34" width="10" height="20" rx="4" fill="#8a96a3"/><rect x="82" y="34" width="10" height="20" rx="4" fill="#8a96a3"/><rect x="30" y="72" width="40" height="22" rx="8" fill="#8a96a3"/><circle cx="50" cy="83" r="5" fill="#ffd23f"/><circle cx="24" cy="24" r="2.5" fill="#6b7785"/><circle cx="76" cy="24" r="2.5" fill="#6b7785"/>');
+ART.ad=sv('<path d="M24 56C4 50 2 28 10 16C20 28 30 36 34 50Z" fill="#f0b43a"/><path d="M76 56C96 50 98 28 90 16C80 28 70 36 66 50Z" fill="#f0b43a"/><polygon points="32,28 26,6 44,20" fill="#fff3c0"/><polygon points="68,28 74,6 56,20" fill="#fff3c0"/><ellipse cx="50" cy="76" rx="26" ry="20" fill="#ffd45a"/><ellipse cx="50" cy="82" rx="14" ry="12" fill="#fff1b8"/><circle cx="50" cy="46" r="28" fill="#ffd45a"/><ellipse cx="50" cy="56" rx="17" ry="12" fill="#fff1b8"/>'+ey(38,44,5)+ey(62,44,5)+'<circle cx="44" cy="55" r="1.8" fill="#a8741a"/><circle cx="56" cy="55" r="1.8" fill="#a8741a"/>'+sm(44,60,12)+ch(28,54)+ch(72,54)+'<circle cx="40" cy="26" r="4" fill="#ff5a3c"/><circle cx="50" cy="22" r="4" fill="#3f9bd6"/><circle cx="60" cy="26" r="4" fill="#6aa84f"/>');
+ART.kt=sv('<path d="M34 52H22q-8 0-8-8V34q0-5 5-5t5 5v10h10z" fill="#4f9a45"/><path d="M66 44h12q8 0 8-8V26q0-5-5-5t-5 5v10H66z" fill="#4f9a45"/><rect x="34" y="14" width="32" height="62" rx="16" fill="#5fb04f"/><circle cx="50" cy="12" r="6" fill="#ff7fa8"/><circle cx="50" cy="12" r="2.5" fill="#ffd23f"/>'+ey(43,38,4)+ey(57,38,4)+ch(38,48)+ch(62,48)+sm(44,49,12)+'<path d="M40 24l-4-2M60 26l4-2M40 64l-4 0M60 62l4 0" stroke="#d8f0c0" stroke-width="2" stroke-linecap="round"/><path d="M26 74h48l-6 20H32z" fill="#c8693a"/><rect x="22" y="70" width="56" height="8" rx="3" fill="#e0804a"/>');
+ART.cp=sv('<polygon points="84,56 98,34 94,56 98,78" fill="#4a86bf"/><polygon points="46,38 60,8 70,40" fill="#4a86bf"/><ellipse cx="50" cy="58" rx="38" ry="22" fill="#6aaae0"/><path d="M12 62q38 24 76-4q-6 22-38 22q-30 0-38-18z" fill="#eaf4ff"/>'+ey(30,52,5)+ch(26,64)+'<path d="M12 64q12 8 26 2" stroke="#2a4a6a" stroke-width="2" fill="none" stroke-linecap="round"/><polygon points="18,66 22,66 20,71" fill="#fff"/><polygon points="26,67 30,67 28,72" fill="#fff"/><circle cx="12" cy="30" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/><circle cx="24" cy="20" r="3" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.to=sv('<polygon points="50,4 58,18 72,8 72,24 90,22 82,38 98,46 84,56 94,72 76,72 74,90 58,82 50,96 42,82 26,90 24,72 6,72 16,56 2,46 18,38 10,22 28,24 28,8 42,18" fill="#ff7a2e"/><circle cx="50" cy="52" r="32" fill="#ffb02e"/><circle cx="30" cy="30" r="7" fill="#f0a03a"/><circle cx="70" cy="30" r="7" fill="#f0a03a"/><circle cx="50" cy="55" r="25" fill="#ffd27a"/><ellipse cx="50" cy="64" rx="13" ry="10" fill="#fff0cf"/>'+ey(40,50,4.5)+ey(60,50,4.5)+'<polygon points="46,58 54,58 50,64" fill="#8a3a1c"/>'+sm(43,67,14)+ch(32,62)+ch(68,62));
+ART.tm=sv('<circle cx="14" cy="70" r="7" fill="#ff5a2b"/><circle cx="86" cy="70" r="7" fill="#ff5a2b"/><path d="M50 6C58 24 84 36 84 62C84 82 68 94 50 94C32 94 16 82 16 62C16 36 42 24 50 6Z" fill="#ff5a2b"/><path d="M50 30C56 44 74 52 74 68C74 82 62 90 50 90C38 90 26 82 26 68C26 52 44 44 50 30Z" fill="#ff9a3c"/><path d="M50 52C54 62 64 66 64 76C64 84 58 88 50 88C42 88 36 84 36 76C36 66 46 62 50 52Z" fill="#ffd23f"/><polygon points="30,38 24,22 42,32" fill="#7a2410"/><polygon points="70,38 76,22 58,32" fill="#7a2410"/>'+ey(40,66,4.5)+ey(60,66,4.5)+ch(31,76)+ch(69,76)+sm(43,77,14));
+ART.au=sv('<rect x="22" y="14" width="56" height="34" rx="14" fill="#7fa6c9"/><rect x="29" y="20" width="42" height="22" rx="8" fill="#cfeeff"/><path d="M34 38l6-12M44 38l6-12" stroke="#fff" stroke-width="3" opacity=".7"/><rect x="8" y="42" width="84" height="40" rx="14" fill="#7fa6c9"/><rect x="2" y="44" width="10" height="9" rx="4" fill="#9ab8d4"/><rect x="88" y="44" width="10" height="9" rx="4" fill="#9ab8d4"/><circle cx="30" cy="60" r="11" fill="#fff"/><circle cx="70" cy="60" r="11" fill="#fff"/><circle cx="31" cy="61" r="6" fill="#222"/><circle cx="71" cy="61" r="6" fill="#222"/><circle cx="33" cy="58.5" r="2" fill="#fff"/><circle cx="73" cy="58.5" r="2" fill="#fff"/><rect x="34" y="72" width="32" height="8" rx="4" fill="#3a4a5a"/><rect x="43" y="64" width="14" height="4" rx="2" fill="#ffd23f"/><rect x="14" y="80" width="20" height="14" rx="5" fill="#2b2f3a"/><rect x="66" y="80" width="20" height="14" rx="5" fill="#2b2f3a"/>');
+ART.tv=sv('<path d="M34 24L46 12M66 24L54 12" stroke="#8a96a3" stroke-width="3" stroke-linecap="round"/><circle cx="46" cy="12" r="3" fill="#ff5a5a"/><circle cx="54" cy="12" r="3" fill="#ff5a5a"/><rect x="10" y="24" width="80" height="58" rx="12" fill="#aab6c4"/><rect x="18" y="32" width="50" height="42" rx="9" fill="#2a3a4a"/><rect x="21" y="35" width="44" height="36" rx="7" fill="#7fe9ff"/>'+ey(35,50,5)+ey(51,50,5)+ch(30,60)+ch(56,60)+sm(38,62,10)+'<circle cx="79" cy="44" r="5" fill="#6b7785"/><circle cx="79" cy="60" r="5" fill="#6b7785"/><rect x="72" y="68" width="14" height="3" rx="1.5" fill="#6b7785"/><rect x="22" y="82" width="10" height="10" rx="3" fill="#8a96a3"/><rect x="68" y="82" width="10" height="10" rx="3" fill="#8a96a3"/>');
+ART.nap=sv((function(){var r='';for(var i=0;i<12;i++)r+='<polygon points="43,16 57,16 50,2" fill="'+(i%2?'#ff8a3d':'#ffb02e')+'" transform="rotate('+i*30+' 50 50)"/>';return r})()+'<circle cx="50" cy="50" r="30" fill="#ffd23f"/><circle cx="50" cy="50" r="30" fill="none" stroke="#ffb02e" stroke-width="3"/><path d="M36 46q5-7 10 0M54 46q5-7 10 0" stroke="#7a3a1c" stroke-width="3" fill="none" stroke-linecap="round"/>'+ch(33,58)+ch(67,58)+sm(40,56,20));
+ART.fh=sv('<path d="M50 90C12 62 8 34 28 24C40 18 48 26 50 34C52 26 60 18 72 24C92 34 88 62 50 90Z" fill="#e5303c"/><path d="M24 36q2-8 10-9" stroke="#ff9aa0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M36 26C30 14 40 12 36 2C48 8 50 16 46 26Z" fill="#ffb02e"/><path d="M60 26C56 14 66 12 62 2C74 8 76 18 70 28Z" fill="#ff8a3d"/><path d="M38 24C36 18 40 16 38 12C44 16 44 20 42 24Z" fill="#ffd23f"/>'+ey(38,50,4.5)+ey(62,50,4.5)+ch(30,60)+ch(70,60)+sm(43,62,14));
+ART.hu=sv('<path d="M8 88C8 52 28 18 62 14C84 12 96 30 86 46C78 40 66 42 66 52C66 64 80 66 92 62C88 82 70 90 8 90Z" fill="#3f9bd6"/><path d="M8 88C12 74 40 70 66 76C78 80 88 74 92 62C88 82 70 90 8 90Z" fill="#6fc0f0"/><circle cx="60" cy="18" r="6" fill="#fff"/><circle cx="72" cy="15" r="5" fill="#fff"/><circle cx="83" cy="24" r="5" fill="#fff"/><circle cx="50" cy="22" r="4" fill="#fff"/>'+ey(30,56,5)+ey(48,56,5)+ch(22,66)+ch(56,66)+sm(33,67,12)+'<circle cx="14" cy="30" r="3" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.hg=sv('<ellipse cx="50" cy="92" rx="46" ry="6" fill="#5d9a45"/><path d="M2 92L22 56Q28 46 36 58L46 92Z" fill="#7a6a5a"/><path d="M4 92L38 26Q50 4 62 26L96 92Z" fill="#8b7a68"/><path d="M38 26Q50 4 62 26L56 31L50 26L44 32Z" fill="#fff"/>'+ey(42,58,5)+ey(58,58,5)+ch(35,68)+ch(65,68)+sm(44,70,12)+'<path d="M80 92v-8M84 92v-12" stroke="#4d7a3a" stroke-width="3"/>');
+ART.bl=sv('<path d="M60 34v-12M60 22q-8-6-12-2M60 22q8-6 12-2" stroke="#8fd8ff" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M80 60q12-4 18-26q0 18-4 26q6 6 4 24q-14-6-20-14z" fill="#3a74a8"/><ellipse cx="46" cy="62" rx="40" ry="26" fill="#4a86bf"/><path d="M8 68q38 24 74-2q-8 22-40 22q-28 0-34-20z" fill="#d6ecff"/>'+ey(24,56,5)+ch(22,66)+sm(12,68,12));
+ART.vs=sv('<path d="M10 88Q22 58 34 88Q46 58 58 88Q72 84 76 54" stroke="#2fae9a" stroke-width="13" fill="none" stroke-linecap="round"/><ellipse cx="78" cy="36" rx="17" ry="14" fill="#2fae9a"/><polygon points="68,24 72,10 78,24" fill="#ffd23f"/><polygon points="78,24 84,10 88,26" fill="#ffd23f"/>'+ey(72,34,4)+ey(86,34,4)+ch(66,42)+ch(92,42)+sm(73,43,10)+'<path d="M0 90q10-8 20 0t20 0t20 0t20 0t20 0v12H0z" fill="#3f9bd6"/>');
+ART.mg=sv('<polygon points="86,50 98,28 94,52 98,76" fill="#34506a"/><polygon points="44,32 60,2 72,34" fill="#34506a"/><ellipse cx="50" cy="52" rx="38" ry="24" fill="#4a6a85"/><path d="M12 58q38 26 76-4q-6 24-38 24q-30 0-38-20z" fill="#cfe0ee"/><path d="M8 54q4 14 32 14l-6-14z" fill="#2a1a22"/><polygon points="12,54 17,54 14,62" fill="#fff"/><polygon points="20,54 25,54 22,63" fill="#fff"/><polygon points="28,55 33,55 30,64" fill="#fff"/>'+ey(30,44,5)+'<path d="M24 37l12 5" stroke="#1a2a3a" stroke-width="3" stroke-linecap="round"/><path d="M58 40l8 10" stroke="#2f4a62" stroke-width="2"/>');
+ART.km=sv('<ellipse cx="38" cy="90" rx="9" ry="5" fill="#7d8791"/><ellipse cx="62" cy="90" rx="9" ry="5" fill="#7d8791"/><polygon points="22,48 6,34 30,36" fill="#8c96a0"/><polygon points="78,48 94,34 70,36" fill="#8c96a0"/><path d="M20 60C20 30 34 20 50 20C66 20 80 30 80 60C80 80 66 90 50 90C34 90 20 80 20 60Z" fill="#9aa4ae"/><path d="M32 24q8-12 18-6q8-10 18 4z" fill="#6aa84f"/>'+ey(40,54,6)+ey(60,54,6)+ch(31,66)+ch(69,66)+sm(43,70,14)+'<path d="M58 30l-4 10 6 6" stroke="#6d7780" stroke-width="2" fill="none"/>');
+ART.di=sv('<path d="M86 62Q100 64 98 44Q90 56 80 52z" fill="#5aa84a"/><polygon points="46,46 52,30 58,46" fill="#ff9a3c"/><polygon points="58,46 66,30 72,48" fill="#ff9a3c"/><polygon points="72,50 82,38 86,56" fill="#ff9a3c"/><ellipse cx="58" cy="66" rx="34" ry="24" fill="#6cc058"/><ellipse cx="54" cy="74" rx="22" ry="12" fill="#c8f0a8"/><rect x="40" y="82" width="12" height="12" rx="4" fill="#4a9a3a"/><rect x="68" y="82" width="12" height="12" rx="4" fill="#4a9a3a"/><ellipse cx="30" cy="44" rx="24" ry="20" fill="#6cc058"/>'+ey(24,38,5)+ch(20,50)+sm(14,52,18)+'<circle cx="10" cy="44" r="1.5" fill="#2d6a2a"/>');
+ART.bo=sv('<polygon points="88,18 91,26 99,28 91,30 88,38 85,30 77,28 85,26" fill="#ffd23f"/><polygon points="12,20 14,26 20,28 14,30 12,36 10,30 4,28 10,26" fill="#c9a8ff"/><path d="M26 92q24-12 48 0v8H26z" fill="#6a3fb5"/><path d="M20 70C14 48 30 44 50 46C70 44 86 48 80 70C78 82 66 90 50 90C34 90 22 82 20 70Z" fill="#2b2147"/><circle cx="50" cy="64" r="22" fill="#ffe0c8"/><ellipse cx="50" cy="44" rx="32" ry="8" fill="#5a3099"/><polygon points="50,2 68,44 32,44" fill="#6a3fb5"/><rect x="38" y="34" width="24" height="6" fill="#ffd23f"/>'+ey(41,62,4.5)+ey(59,62,4.5)+ch(35,70)+ch(65,70)+sm(44,72,12));
+ART.vk=sv('<ellipse cx="50" cy="90" rx="40" ry="8" fill="#7a5a3a"/><path d="M12 90q6-18 14 0M74 90q8-16 14 0" fill="#8b6a46"/><ellipse cx="50" cy="60" rx="32" ry="30" fill="#6b5a72"/><ellipse cx="50" cy="72" rx="18" ry="14" fill="#85748c"/><ellipse cx="24" cy="76" rx="10" ry="7" fill="#f0c8a0"/><ellipse cx="76" cy="76" rx="10" ry="7" fill="#f0c8a0"/><path d="M17 80v5M24 82v5M31 80v5M69 80v5M76 82v5M83 80v5" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="38" cy="50" r="6" fill="#fff"/><circle cx="62" cy="50" r="6" fill="#fff"/>'+ey(38,50,3.5)+ey(62,50,3.5)+'<ellipse cx="50" cy="62" rx="8" ry="6" fill="#ff9aa8"/>'+ch(28,62)+ch(72,62)+sm(44,69,12));
+ART.rk=sv('<path d="M26 74l-12 10M34 80l-8 12M74 74l12 10M66 80l8 12" stroke="#d8503c" stroke-width="5" stroke-linecap="round"/><circle cx="14" cy="42" r="12" fill="#f0705a"/><circle cx="86" cy="42" r="12" fill="#f0705a"/><path d="M24 58q-8-4-10-12M76 58q8-4 10-12" stroke="#f0705a" stroke-width="6" fill="none" stroke-linecap="round"/><rect x="36" y="30" width="5" height="16" fill="#f0705a"/><rect x="59" y="30" width="5" height="16" fill="#f0705a"/><circle cx="38" cy="30" r="8" fill="#fff"/><circle cx="62" cy="30" r="8" fill="#fff"/><circle cx="39" cy="31" r="4" fill="#222"/><circle cx="63" cy="31" r="4" fill="#222"/><ellipse cx="50" cy="64" rx="32" ry="22" fill="#f0705a"/><ellipse cx="50" cy="72" rx="20" ry="11" fill="#ffc2b3"/>'+ch(30,62)+ch(70,62)+sm(43,62,14)+'<circle cx="88" cy="16" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.pg=sv('<ellipse cx="38" cy="92" rx="12" ry="5" fill="#ff9a3c"/><ellipse cx="62" cy="92" rx="12" ry="5" fill="#ff9a3c"/><ellipse cx="16" cy="62" rx="8" ry="16" fill="#2b3a52" transform="rotate(15 16 62)"/><ellipse cx="84" cy="62" rx="8" ry="16" fill="#2b3a52" transform="rotate(-15 84 62)"/><ellipse cx="50" cy="58" rx="30" ry="34" fill="#2b3a52"/><ellipse cx="50" cy="66" rx="20" ry="26" fill="#fff"/><circle cx="38" cy="40" r="8" fill="#fff"/><circle cx="62" cy="40" r="8" fill="#fff"/>'+ey(39,41,4.5)+ey(61,41,4.5)+'<polygon points="44,50 56,50 50,58" fill="#ff9a3c"/>'+ch(30,52)+ch(70,52)+'<circle cx="86" cy="20" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.tc=sv('<path d="M42 22C36 12 44 10 42 2C52 8 54 16 50 22C54 14 60 12 58 6C68 12 68 20 62 24Z" fill="#ffb02e"/><path d="M34 94h12M54 94h12" stroke="#ff9a3c" stroke-width="4" stroke-linecap="round"/><rect x="38" y="84" width="4" height="10" fill="#ff9a3c"/><rect x="58" y="84" width="4" height="10" fill="#ff9a3c"/><ellipse cx="14" cy="62" rx="8" ry="14" fill="#e5503c" transform="rotate(20 14 62)"/><ellipse cx="86" cy="62" rx="8" ry="14" fill="#e5503c" transform="rotate(-20 86 62)"/><circle cx="50" cy="56" r="34" fill="#f0602d"/><ellipse cx="50" cy="68" rx="22" ry="18" fill="#ffc15a"/>'+ey(38,50,5)+ey(62,50,5)+'<polygon points="44,58 56,58 50,67" fill="#e0801a"/>'+ch(28,62)+ch(72,62));
+ART.pk=sv('<path d="M84 72q14-6 12-26q-10 6-14 22z" fill="#ffb02e"/><path d="M88 68q6-6 6-16q-6 4-8 14z" fill="#ff6a2b"/><ellipse cx="18" cy="42" rx="11" ry="20" fill="#a8301a" transform="rotate(15 18 42)"/><ellipse cx="82" cy="42" rx="11" ry="20" fill="#a8301a" transform="rotate(-15 82 42)"/><ellipse cx="50" cy="84" rx="26" ry="12" fill="#e5603c"/><circle cx="50" cy="48" r="32" fill="#e5603c"/><ellipse cx="50" cy="60" rx="18" ry="14" fill="#ffd0a0"/><circle cx="36" cy="30" r="3" fill="#ffb02e"/><circle cx="66" cy="28" r="2.5" fill="#ffb02e"/>'+ey(38,46,5)+ey(62,46,5)+'<ellipse cx="50" cy="56" rx="6" ry="4" fill="#2b1a14"/><path d="M44 63q6 6 12 0" stroke="#2b1a14" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M47 65q3 9 6 0z" fill="#ff7f9a"/>'+ch(28,56)+ch(72,56));
+ART.sn=sv('<ellipse cx="32" cy="90" rx="9" ry="5" fill="#a8764a"/><ellipse cx="68" cy="90" rx="9" ry="5" fill="#a8764a"/><polygon points="8,64 14,40 20,52 26,28 34,44 42,20 50,40 58,20 66,44 74,28 80,52 86,40 92,64 82,84 18,84" fill="#7a5436"/><polygon points="14,64 20,48 28,60 34,40 42,56 50,34 58,56 66,40 72,60 80,48 86,64 80,78 20,78" fill="#946a46"/><ellipse cx="50" cy="66" rx="26" ry="22" fill="#f1d9b5"/><circle cx="30" cy="48" r="7" fill="#f1d9b5"/><circle cx="70" cy="48" r="7" fill="#f1d9b5"/>'+ey(40,62,4.5)+ey(60,62,4.5)+'<ellipse cx="50" cy="72" rx="6" ry="4.5" fill="#3a2418"/>'+ch(31,72)+ch(69,72)+sm(45,77,10));
+ART.ta=sv('<path d="M88 72q8-4 8-14q-8 4-12 10z" fill="#9a8a7a"/><ellipse cx="34" cy="90" rx="9" ry="5" fill="#8a7a6a"/><ellipse cx="68" cy="90" rx="9" ry="5" fill="#8a7a6a"/><path d="M12 76C12 42 32 24 58 26C84 28 96 50 92 78Z" fill="#a89484"/><path d="M34 70C34 50 44 38 60 34M50 74C50 58 58 46 72 42M66 76C68 64 74 54 84 52" stroke="#7a6a5a" stroke-width="3" fill="none"/><ellipse cx="30" cy="68" rx="22" ry="18" fill="#d8c4b0"/><ellipse cx="18" cy="52" rx="6" ry="9" fill="#b89c88"/><ellipse cx="40" cy="50" rx="6" ry="9" fill="#b89c88"/>'+ey(24,66,4.5)+ey(40,66,4.5)+'<ellipse cx="14" cy="74" rx="4" ry="3" fill="#8a5a50"/>'+ch(26,74)+sm(26,79,8));
+ART.dl=sv('<path d="M0 88q10-8 20 0t20 0t20 0t20 0t20 0v14H0z" fill="#3f9bd6"/><path d="M14 74C10 40 38 14 66 20C80 24 90 36 88 48C80 40 70 42 66 50C60 64 40 76 14 74Z" fill="#4a9ae0"/><path d="M20 72C40 76 60 66 68 52C60 66 44 70 20 68Z" fill="#d6ecff"/><path d="M50 24L58 4L70 22Z" fill="#3a7ac0"/><path d="M86 50l12-14-2 20z" fill="#3a7ac0"/><path d="M12 76l-8 10 14-2z" fill="#3a7ac0"/>'+ey(64,34,4.5)+ch(58,44)+'<path d="M72 42q8 4 14-2" stroke="#1d4a7a" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="28" cy="20" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/><circle cx="18" cy="30" r="3" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.md=sv('<path d="M26 56q-6 16 4 24q6 8-2 16M40 60q-4 14 4 22q4 8-2 14M60 60q4 14-4 22q-4 8 2 14M74 56q6 16-4 24q-6 8 2 16" stroke="#b79cf2" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M12 58C12 26 30 10 50 10C70 10 88 26 88 58Z" fill="#c8b0ff"/><path d="M12 58q9 8 19 0q9 8 19 0q9 8 19 0q9 8 19 0" fill="#c8b0ff" stroke="#c8b0ff" stroke-width="2"/><ellipse cx="34" cy="28" rx="8" ry="5" fill="#fff" opacity=".5" transform="rotate(-30 34 28)"/>'+ey(38,44,5)+ey(62,44,5)+ch(28,52)+ch(72,52)+sm(44,50,12)+'<circle cx="90" cy="20" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.sa=sv('<path d="M84 80C98 70 98 50 88 38C88 52 80 60 74 68Z" fill="#ffb02e"/><path d="M84 80C92 72 94 62 90 52C88 62 84 68 80 72Z" fill="#ff6a2b"/><ellipse cx="18" cy="86" rx="9" ry="6" fill="#d85a1c"/><ellipse cx="46" cy="92" rx="9" ry="5" fill="#d85a1c"/><ellipse cx="74" cy="90" rx="9" ry="6" fill="#d85a1c"/><path d="M14 62C14 46 30 38 48 42C66 46 82 56 82 74C82 86 66 92 46 92C26 92 14 80 14 62Z" fill="#f0702d"/><ellipse cx="44" cy="76" rx="24" ry="12" fill="#ffc15a"/><circle cx="52" cy="58" r="3" fill="#a8301a"/><circle cx="64" cy="66" r="3" fill="#a8301a"/><circle cx="70" cy="78" r="3" fill="#a8301a"/><circle cx="32" cy="44" r="24" fill="#f0702d"/><circle cx="22" cy="30" r="8" fill="#fff"/><circle cx="42" cy="30" r="8" fill="#fff"/>'+ey(23,31,4.5)+ey(41,31,4.5)+ch(18,48)+ch(46,48)+sm(25,52,14));
+ART.lb=sv('<path d="M80 82q16-4 12-26q-6 12-14 14z" fill="#ffb02e"/><polygon points="20,38 24,8 46,28" fill="#c8301a"/><polygon points="80,38 76,8 54,28" fill="#c8301a"/><polygon points="26,30 28,16 38,26" fill="#ffb98a"/><polygon points="74,30 72,16 62,26" fill="#ffb98a"/><ellipse cx="50" cy="86" rx="26" ry="10" fill="#f0702d"/><circle cx="50" cy="52" r="34" fill="#ff8a3c"/><path d="M34 30l6 8M50 24v10M66 30l-6 8M22 58l9-2M78 58l-9-2" stroke="#c8301a" stroke-width="3" stroke-linecap="round"/><ellipse cx="50" cy="64" rx="16" ry="12" fill="#ffe3c9"/><circle cx="37" cy="50" r="7" fill="#fff"/><circle cx="63" cy="50" r="7" fill="#fff"/><circle cx="38" cy="51" r="4.5" fill="#222"/><circle cx="62" cy="51" r="4.5" fill="#222"/><circle cx="39.5" cy="49" r="1.5" fill="#fff"/><circle cx="63.5" cy="49" r="1.5" fill="#fff"/><polygon points="46,60 54,60 50,65" fill="#ff5a7a"/><path d="M43 69q7 5 14 0" stroke="#222" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M36 66l-14 2M36 70l-14 6M64 66l14 2M64 70l14 6" stroke="#fff" stroke-width="1.5"/>');
+ART.mc=sv('<ellipse cx="50" cy="88" rx="44" ry="8" fill="#6a5a60"/><circle cx="82" cy="72" r="14" fill="#7a6a70"/><path d="M78 60L74 42M88 60L92 44" stroke="#7a6a70" stroke-width="4" stroke-linecap="round"/><circle cx="74" cy="40" r="5" fill="#fff"/><circle cx="92" cy="42" r="5" fill="#fff"/><circle cx="75" cy="41" r="2.5" fill="#222"/><circle cx="93" cy="43" r="2.5" fill="#222"/><path d="M76 78q6 5 12 0" stroke="#222" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="38" cy="58" r="30" fill="#e5503c"/><path d="M38 58q4-8 12-4q8 6 0 16q-14 8-24-2q-8-16 10-24q22-6 30 14" stroke="#ffb02e" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M34 30C28 20 38 18 36 8C46 14 48 22 44 30Z" fill="#ffb02e"/>');
+ART.szk=sv('<polygon points="50,2 58,28 84,16 68,38 96,50 68,60 84,84 58,72 50,98 42,72 16,84 32,60 4,50 32,38 16,16 42,28" fill="#ffb02e"/><circle cx="50" cy="50" r="26" fill="#ffd23f"/><circle cx="50" cy="50" r="26" fill="none" stroke="#ff8a1c" stroke-width="3"/>'+ey(41,46,4.5)+ey(59,46,4.5)+ch(35,56)+ch(65,56)+sm(44,56,12));
+ART.vl=sv('<path d="M42 14C40 2 60 0 62 10C70 6 76 14 68 22Z" fill="#e5403c"/><path d="M22 52C22 26 36 14 50 14C64 14 78 26 78 52V74H22Z" fill="#aab6c4"/><path d="M50 14V30" stroke="#8a96a3" stroke-width="3"/><rect x="28" y="38" width="44" height="22" rx="7" fill="#2a3a4a"/><circle cx="40" cy="48" r="5" fill="#7fe9ff"/><circle cx="60" cy="48" r="5" fill="#7fe9ff"/><path d="M44 55q6 3 12 0" stroke="#7fe9ff" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M34 68h32" stroke="#8a96a3" stroke-width="3"/><path d="M10 74h80v8q-10 12-40 12T10 82z" fill="#8a96a3"/><path d="M28 80l4 8M50 82v10M72 80l-4 8" stroke="#6b7785" stroke-width="2"/><circle cx="26" cy="34" r="3" fill="#6b7785"/><circle cx="74" cy="34" r="3" fill="#6b7785"/>');
+ART.rkk=sv('<rect x="18" y="14" width="10" height="26" rx="5" fill="#8a96a3" transform="rotate(-18 23 27)"/><rect x="72" y="14" width="10" height="26" rx="5" fill="#8a96a3" transform="rotate(18 77 27)"/><circle cx="88" cy="76" r="5" fill="#ff5a5a"/><path d="M78 80q-6 4-14 2" stroke="#8a96a3" stroke-width="4" fill="none" stroke-linecap="round"/><rect x="24" y="66" width="52" height="26" rx="10" fill="#aab6c4"/><rect x="22" y="22" width="56" height="48" rx="16" fill="#cbd5df"/><rect x="30" y="32" width="40" height="22" rx="9" fill="#2a3a4a"/><circle cx="41" cy="43" r="5.5" fill="#7fe9ff"/><circle cx="59" cy="43" r="5.5" fill="#7fe9ff"/><circle cx="42.5" cy="41" r="1.8" fill="#fff"/><circle cx="60.5" cy="41" r="1.8" fill="#fff"/><rect x="42" y="58" width="16" height="8" rx="4" fill="#3a4a5a"/><circle cx="50" cy="60" r="2.5" fill="#ffd23f"/>'+ch(28,60)+ch(72,60));
+ART.lf=sv('<polygon points="22,38 18,8 42,28" fill="#c8301a"/><polygon points="78,38 82,8 58,28" fill="#c8301a"/><path d="M8 66C-2 44 12 22 28 18C26 28 30 34 36 36C38 18 54 8 64 12C62 22 70 26 76 24C92 34 100 54 92 70C84 58 80 62 74 68Z" fill="#ff7a2b"/><circle cx="50" cy="56" r="30" fill="#e5503c"/><ellipse cx="50" cy="68" rx="16" ry="14" fill="#ffd9bf"/><path d="M28 44l12 6M72 44l-12 6" stroke="#6a1a10" stroke-width="3" stroke-linecap="round"/><circle cx="38" cy="52" r="5" fill="#ffd23f"/><circle cx="62" cy="52" r="5" fill="#ffd23f"/><ellipse cx="38" cy="52" rx="2" ry="4" fill="#222"/><ellipse cx="62" cy="52" rx="2" ry="4" fill="#222"/><ellipse cx="50" cy="62" rx="6" ry="4.5" fill="#2b1a14"/><path d="M44 70q6 5 12 0" stroke="#2b1a14" stroke-width="2" fill="none" stroke-linecap="round"/><polygon points="45,70 48,70 46,77" fill="#fff"/><polygon points="52,70 55,70 54,77" fill="#fff"/>'+ch(30,62)+ch(70,62));
+ART.po=sv('<path d="M16 68q-12 8-6 22q4-8 10-6M30 74q-8 12 0 20q4-8 8-8M70 74q8 12 0 20q-4-8-8-8M84 68q12 8 6 22q-4-8-10-6M44 78q-4 12 2 18M56 78q4 12-2 18" stroke="#6a86e0" stroke-width="9" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="44" rx="34" ry="36" fill="#6a86e0"/><ellipse cx="36" cy="26" rx="9" ry="5" fill="#fff" opacity=".35" transform="rotate(-30 36 26)"/><circle cx="38" cy="48" r="9" fill="#fff"/><circle cx="62" cy="48" r="9" fill="#fff"/>'+ey(39,49,5)+ey(61,49,5)+ch(26,58)+ch(74,58)+sm(43,60,14)+'<circle cx="88" cy="18" r="4" fill="none" stroke="#8fd8ff" stroke-width="2"/><circle cx="10" cy="30" r="3" fill="none" stroke="#8fd8ff" stroke-width="2"/>');
+ART.et=sv('<ellipse cx="24" cy="74" rx="12" ry="20" fill="#6aa84f" opacity=".9" transform="rotate(35 24 74)"/><ellipse cx="76" cy="74" rx="12" ry="20" fill="#6aa84f" opacity=".9" transform="rotate(-35 76 74)"/><ellipse cx="20" cy="40" rx="16" ry="26" fill="#ff6a3c" opacity=".9" transform="rotate(25 20 40)"/><ellipse cx="80" cy="40" rx="16" ry="26" fill="#3f9bd6" opacity=".9" transform="rotate(-25 80 40)"/><path d="M34 98l8-24h16l8 24z" fill="#ffe08a"/><path d="M42 74q8 6 16 0l4-12H38z" fill="#fff3c0"/><circle cx="50" cy="48" r="20" fill="#ffd9bf"/><path d="M28 48C26 26 40 22 50 24C60 22 74 26 72 48C68 36 56 34 50 34C44 34 32 36 28 48Z" fill="#8a5ad6"/>'+ey(42,50,4)+ey(58,50,4)+ch(35,57)+ch(65,57)+sm(45,58,10)+'<polygon points="50,4 53,12 61,12 55,17 57,25 50,20 43,25 45,17 39,12 47,12" fill="#ffd23f"/><circle cx="14" cy="14" r="3" fill="#ffd23f"/><circle cx="88" cy="20" r="3" fill="#ffd23f"/>');
+ART.lia=sv('<path d="M20 52C12 76 20 94 26 96L38 70ZM80 52C88 76 80 94 74 96L62 70Z" fill="#b57ae6"/><path d="M22 98C24 80 36 74 50 74C64 74 76 80 78 98Z" fill="#ff7fbf"/><path d="M36 98q14-14 28 0" fill="#ffb3da"/><path d="M42 74h16l-3 8h-10z" fill="#ffd9bf"/><path d="M22 46C20 20 36 10 50 10C64 10 80 20 78 46C76 56 70 60 70 60L30 60C30 60 24 56 22 46Z" fill="#c68af0"/><circle cx="50" cy="48" r="22" fill="#ffe3cf"/><path d="M28 44C32 24 48 22 52 30C60 22 72 28 72 44C66 34 58 32 52 36C46 32 36 34 28 44Z" fill="#c68af0"/><polygon points="38,16 42,6 46,14 50,4 54,14 58,6 62,16" fill="#ffd23f"/>'+ey(40,50,4.5)+ey(60,50,4.5)+'<path d="M34 46l-4-2M36 44l-3-4M66 46l4-2M64 44l3-4" stroke="#222" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="50" cy="58" rx="4.5" ry="2.8" fill="#ff5a8f"/>'+ch(33,56)+ch(67,56)+'<path d="M84 66L88 34" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><polygon points="88,14 91,21 98,21 92.5,26 94.5,33 88,29 81.5,33 83.5,26 78,21 85,21" fill="#fff3a0"/><circle cx="10" cy="20" r="3" fill="#ffb3da"/><circle cx="14" cy="36" r="2" fill="#fff"/>');
+var S={coins:200,own:{0:1,4:1,12:1},beat:[],v:2},tab='fight',V='list',B={},shopCard=null;
+try{var raw=localStorage.getItem('lenyharc5');if(raw){var d=JSON.parse(raw);if(d&&d.own){S=d;if(!S.beat)S.beat=[];if(!S.v){var no={};Object.keys(S.own).forEach(function(k){var q=+k,n=Math.floor(q/3)*4+q%3;no[n]=(no[n]||0)+S.own[k]});S.own=no;S.v=2}}}}catch(e){}
+function save(){try{localStorage.setItem('lenyharc5',JSON.stringify(S))}catch(e){}}
+function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+function ci(id){return id>>2}
+function lv(id){return (id&3)+1}
+var PW=[[10,30,60],[10,40,70],[10,30,70],[20,40,70],[10,40,60],[20,40,70],[20,50,80],[30,50,80],[20,50,90],[30,60,80],[30,60,90],[30,60,90],[40,70,100],[40,70,100],[50,80,100],[10,30,60],[20,50,80],[30,50,90],[40,70,100],[50,80,100],[20,50,80],[40,80,100],[30,60,80],[20,40,80],[40,70,100],[30,50,80],[30,60,90],[50,80,100],[20,40,70],[30,60,90],[40,70,100],[10,30,60],[10,30,60],[20,40,70],[10,30,60],[20,40,70],[20,50,80],[30,60,80],[30,60,90],[30,50,80],[30,60,90],[20,50,80],[30,60,80],[30,50,90],[30,70,100],[30,60,90],[40,70,100],[40,70,100],[50,80,100],[40,80,100]],TN=['BRONZ','EZÜST','ARANY','GYÉMÁNT'],CF='';
+function hasD(c){return !/[MZ]/.test(C[c][2])}function PD(c){return 100+Math.round((PW[c][2]-60)/40*5)*10}function pw(id){var c=ci(id),l=lv(id);return l==4?PD(c):PW[c][l-1]}function allowed(id,l){return lv(id)==1||l>=4}
+function wpick(w){var r=Math.random()*100,s=0;for(var i=0;i<w.length;i++){s+=w[i];if(r<s)return i}return w.length-1}
+function roll(k){var p=PK[k],t='CRL'.charAt(wpick(p.t)),L=wpick(p.l),ids=[];C.forEach(function(c,i){if(c[4]==t&&(L<3||hasD(i)))ids.push(i)});return rnd(ids)*4+L}
+function add(id){S.own[id]=(S.own[id]||0)+1}
+function fmt(n){return String(n).replace('.',',')}
+function owned(){return Object.keys(S.own).map(Number).filter(function(k){return S.own[k]>0})}
+function card(id,o){o=o||{};var c=C[ci(id)],l=lv(id);
+var ic=c[2].split('').map(function(e){return E[e].i}).join('');
+var ec=(l>=3&&!o.no)?' hi '+c[2].split('').map(function(e){return 'e'+e}).join(' '):'';
+return '<button class="card b'+l+ec+(o.sel?' sel':'')+(o.off?' off':'')+(o.no?' no':'')+(o.big?' big':'')+'"'+(o.fn?' onclick="'+o.fn+'"':' tabindex="-1"')+(o.off?' disabled':'')+'>'+
+(o.cnt>1?'<span class="cnt">×'+o.cnt+'</span>':'')+'<div class="tr">'+TN[l-1]+'</div><div class="e">'+ART[c[1]]+'</div><div class="n">'+c[0]+'</div><div class="p">'+pw(id)+'</div><div class="el">'+ic+'</div>'+(o.no?'<div class="nm">Nincs meg</div>':'')+'</button>'}
+function mult(a,b){var m=C[ci(a)][2].split(''),t=C[ci(b)][2].split('');
+var adv=m.some(function(e){return t.some(function(o){return BS[e].indexOf(o)>=0})});
+var dis=t.some(function(o){return m.every(function(e){return BS[o].indexOf(e)>=0})});
+return adv&&!dis?1.5:(dis&&!adv?0.75:1)}
+function eff(a,b){return pw(a)*mult(a,b)}
+var SN=['Zöld rét','Kék tó','Tüzes sivatag','Fém város','Sárkányhegy','Jégbarlang','Mélytenger','Felhőváros','Kristálybánya','Csillagpalota','Mérges mocsár','Dzsungel','Elfeledett romok','Vulkánsziget','Kísértetkastély','Homokóra-sivatag','Kristálytó','Gépváros','Sötét erdő','Holdszentély','Lávafolyam','Jégkorona-hegy','Szivárványhíd','Elsüllyedt város','Villámcsúcs','Időtemplom','Árnyvilág','Csillagtenger','Sárkánytrón','Az Örökkévalóság Csarnoka'],
+DC=['🌳','🌊','🌵','⚙️','🌋','❄️','🐙','☁️','💎','⭐','🐸','🌴','🏺','🏝️','👻','⏳','🧚','🤖','🌲','🌙','🔥','🏔️','🌈','🔱','⚡','⌛','🌑','✨','🐲','👑'],PT=[],VH=3555;
+(function(){var xs=[80,250,120,270,170,90,240,130,270,170];for(var s=0;s<30;s++)PT.push([xs[s%10],VH-100-s*115])})();
+function isBoss(i){return i%4==3||i==120}function stOf(i){return Math.min(Math.floor(i/4),29)}function stEnd(s){return s==29?s*4+5:s*4+4}
+function showBadge(){
+var d=document.createElement('div');d.setAttribute('role','dialog');d.setAttribute('aria-label','Bajnoki jelvény');
+d.style.cssText='position:fixed;inset:0;z-index:99;background:#0b1118;opacity:0;transition:opacity .6s';
+d.innerHTML='<canvas style="width:100%;height:100%;display:block"></canvas><div style="position:absolute;left:0;right:0;top:8%;text-align:center;color:#fff3c4;text-shadow:0 0 18px #e8b04a;padding:0 16px"><div style="font-size:14px;letter-spacing:.3em">ELISMERÉS</div><div style="font-size:30px;font-weight:bold;margin-top:6px">A Lényharc Bajnoka</div><div style="font-size:15px;margin-top:8px;color:#eef3ef;text-shadow:none">Legyőzted az Örökkévalót, a Lényharc utolsó ellenfelét. Gratulálunk!</div></div><button class="btn" style="position:absolute;left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:auto">Tovább</button>';
+document.body.appendChild(d);setTimeout(function(){d.style.opacity=1},30);
+var cv=d.firstChild,ctx=cv.getContext('2d'),W,H,raf,t0=Date.now(),CN=[],i,cols=['#ffd24a','#ff7a3c','#6fe8ff','#8fd16b','#ff8fc1'];
+for(i=0;i<60;i++)CN.push({x:Math.random(),y:Math.random(),v:.1+Math.random()*.18,w:4+Math.random()*6,p:Math.random()*6,c:cols[i%5]});
+function kk(){return window.devicePixelRatio>1.5?2:1}
+function size(){W=cv.width=Math.floor(window.innerWidth*kk());H=cv.height=Math.floor(window.innerHeight*kk())}
+size();
+var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function star(R,r){ctx.beginPath();for(var j=0;j<10;j++){var a=j*Math.PI/5-Math.PI/2,q=j%2?r:R;ctx.lineTo(Math.cos(a)*q,Math.sin(a)*q)}ctx.closePath()}
+function frame(){var t=still?.6:(Date.now()-t0)/1000;if(cv.width!=Math.floor(window.innerWidth*kk()))size();
+var u=H/700,cx=W/2,R=Math.min(W*.34,H*.2),cy=H*.52+Math.sin(t*2)*R*.03;
+var g=ctx.createRadialGradient(cx,cy,0,cx,cy,H*.7);g.addColorStop(0,'#2a3a52');g.addColorStop(1,'#0b1118');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+var gl=ctx.createRadialGradient(cx,cy,R*.5,cx,cy,R*2.2);gl.addColorStop(0,'rgba(255,200,80,.45)');gl.addColorStop(1,'rgba(255,200,80,0)');ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);
+var a=t*1.3,c=Math.cos(a),s=Math.sin(a),h=R*.13,N=18,ac=Math.max(.02,Math.abs(c));
+for(var n=0;n<=N;n++){var sh=n/N;ctx.fillStyle='rgb('+Math.round(140+60*sh)+','+Math.round(96+50*sh)+',20)';ctx.beginPath();ctx.ellipse(cx+h*s*(1-2*n/N),cy,Math.max(.6,R*ac),R,0,0,7);ctx.fill()}
+var fo=(c>=0?1:-1)*h*s;
+ctx.save();ctx.translate(cx+fo,cy);ctx.scale(ac,1);
+var fg=ctx.createLinearGradient(-R,-R,R,R);fg.addColorStop(0,'#fff1a8');fg.addColorStop(.45,'#f0b43a');fg.addColorStop(1,'#a8741a');
+ctx.fillStyle=fg;ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.fill();
+ctx.lineWidth=R*.06;ctx.strokeStyle='#8a5a10';ctx.beginPath();ctx.arc(0,0,R*.88,0,7);ctx.stroke();
+ctx.fillStyle='#d99a22';ctx.beginPath();ctx.arc(0,0,R*.8,0,7);ctx.fill();
+ctx.textAlign='center';ctx.textBaseline='middle';
+if(c>=0){star(R*.62,R*.27);ctx.fillStyle='#fff3b0';ctx.fill();ctx.lineWidth=R*.03;ctx.strokeStyle='#8a5a10';ctx.stroke();ctx.fillStyle='#6a420a';ctx.font='bold '+Math.round(R*.2)+'px sans-serif';ctx.fillText('BAJNOK',0,R*.7)}
+else{ctx.font=Math.round(R*.8)+'px sans-serif';ctx.fillText('👑',0,-R*.08);ctx.fillStyle='#6a420a';ctx.font='bold '+Math.round(R*.22)+'px sans-serif';ctx.fillText('30. SZINT',0,R*.62)}
+ctx.save();ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.clip();ctx.rotate(.6);ctx.globalAlpha=.28;ctx.fillStyle='#fff';ctx.fillRect(-R*2+((t*.6)%1)*R*4,-R*2,R*.3,R*4);ctx.restore();
+ctx.restore();
+CN.forEach(function(p){if(!still)p.y+=p.v*.016;if(p.y>1.05){p.y=-.05;p.x=Math.random()}ctx.fillStyle=p.c;ctx.globalAlpha=.85;ctx.fillRect(p.x*W,p.y*H,p.w*u*Math.abs(Math.cos(t*3+p.p))+1,p.w*u*.6)});ctx.globalAlpha=1;
+if(!still)raf=requestAnimationFrame(frame)}
+frame();
+d.lastChild.onclick=function(){cancelAnimationFrame(raf);d.remove()};d.lastChild.focus()}
+function showIntro(){
+var d=document.createElement('div');d.setAttribute('role','dialog');d.setAttribute('aria-label','3. szint: Tüzes sivatag');
+d.style.cssText='position:fixed;inset:0;z-index:99;background:#000;opacity:0;transition:opacity .6s';
+d.innerHTML='<canvas style="width:100%;height:100%;display:block"></canvas><div style="position:absolute;left:0;right:0;top:12%;text-align:center;color:#fff3d6;text-shadow:0 0 18px #ff7a1a,0 0 40px #ff3d00"><div style="font-size:15px;letter-spacing:.3em">3. SZINT</div><div style="font-size:34px;font-weight:bold;letter-spacing:.08em;margin-top:6px">TÜZES SIVATAG</div></div><button class="btn" style="position:absolute;left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:auto">Belépés</button>';
+document.body.appendChild(d);setTimeout(function(){d.style.opacity=1},30);
+var cv=d.firstChild,ctx=cv.getContext('2d'),W,H,raf,t0=Date.now(),EM=[],i;
+for(i=0;i<70;i++)EM.push({x:Math.random(),y:Math.random(),v:.05+Math.random()*.12,r:1+Math.random()*2.5,p:Math.random()*6});
+function rs(){return window.devicePixelRatio>1.5?2:1}
+function size(){W=cv.width=Math.floor(window.innerWidth*rs());H=cv.height=Math.floor(window.innerHeight*rs())}
+size();
+var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(){var t=still?3:(Date.now()-t0)/1000;if(cv.width!=Math.floor(window.innerWidth*rs()))size();
+var hy=H*.5,f=W*.85,cx=W/2,g=ctx.createLinearGradient(0,0,0,hy);
+g.addColorStop(0,'#1a0505');g.addColorStop(.6,'#8a1f0a');g.addColorStop(1,'#ff9a2a');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+var sr=H*.15*(1+.03*Math.sin(t*3)),sy0=hy-H*.1,sg=ctx.createRadialGradient(cx,sy0,0,cx,sy0,sr*2.2);
+sg.addColorStop(0,'#fff6b0');sg.addColorStop(.35,'#ffc13a');sg.addColorStop(.6,'rgba(255,110,20,.5)');sg.addColorStop(1,'rgba(255,60,0,0)');
+ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cx,sy0,sr*2.2,0,7);ctx.fill();
+var sc=t*2.2,N=30,dz=1.3;
+for(var r=N;r>=1;r--){var z=1.2+r*dz,d2=r/N;ctx.beginPath();ctx.moveTo(0,H);
+for(var x=-14;x<=14;x+=.9){var hh=Math.sin(x*.5+(z+sc)*.31)*.55+Math.sin(x*.21-(z+sc)*.17)*.8;ctx.lineTo(cx+x*f/z,hy+(2.4-hh)*f/z)}
+ctx.lineTo(W,H);ctx.closePath();ctx.fillStyle='rgb('+Math.round(235-d2*150)+','+Math.round(140-d2*105)+','+Math.round(70-d2*45)+')';ctx.fill();
+ctx.strokeStyle='rgba(255,170,60,'+(.5-d2*.4)+')';ctx.lineWidth=1.5;ctx.stroke()}
+var a=t*1.1,ca=Math.cos(a),sa=Math.sin(a),tl=.38,ct=Math.cos(tl),st=Math.sin(tl);
+var VT=[[-1,0,-1],[1,0,-1],[1,0,1],[-1,0,1],[0,1.9,0]].map(function(v){var x=v[0]*ca+v[2]*sa,z=-v[0]*sa+v[2]*ca,y=v[1]-.95;return [x,y*ct-z*st+3+.12*Math.sin(t*2),y*st+z*ct+6]});
+var PJ=VT.map(function(v){return [cx+v[0]*f/v[2],hy+(2.4-v[1])*f/v[2]]});
+[[0,1,4],[1,2,4],[2,3,4],[3,0,4],[0,3,2,1]].map(function(fc){var a0=VT[fc[0]],a1=VT[fc[1]],a2=VT[fc[2]],ux=a1[0]-a0[0],uy=a1[1]-a0[1],uz=a1[2]-a0[2],vx=a2[0]-a0[0],vy=a2[1]-a0[1],vz=a2[2]-a0[2],nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,nl=Math.sqrt(nx*nx+ny*ny+nz*nz)||1,zz=0;
+fc.forEach(function(k){zz+=VT[k][2]});return {f:fc,z:zz/fc.length,s:.25+.75*Math.abs((nx*.4+ny*.7-nz*.6)/nl)}}).sort(function(p,q){return q.z-p.z}).forEach(function(o){
+ctx.beginPath();o.f.forEach(function(k,j){var p=PJ[k];j?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])});ctx.closePath();
+ctx.fillStyle='rgb('+Math.round(255*o.s)+','+Math.round(70+110*o.s*o.s)+','+Math.round(15+20*o.s)+')';ctx.shadowColor='#ff7a1a';ctx.shadowBlur=H*.03;ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#ffe08a';ctx.lineWidth=2;ctx.stroke()});
+ctx.fillStyle='#ffb347';EM.forEach(function(p){p.y-=p.v*.016;if(p.y<0){p.y=1;p.x=Math.random()}ctx.globalAlpha=.3+.5*Math.abs(Math.sin(t*3+p.p));ctx.beginPath();ctx.arc((p.x+Math.sin(t+p.p)*.02)*W,p.y*H,p.r*(H/700),0,7);ctx.fill()});ctx.globalAlpha=1;
+if(!still)raf=requestAnimationFrame(frame)}
+frame();
+d.lastChild.onclick=function(){cancelAnimationFrame(raf);d.remove()};d.lastChild.focus()}
+function openStage(s){tab='fight';B={s:s};V='stage';render();if(s==2&&stOpen(2)&&!S.intro3){S.intro3=1;save();showIntro()}}
+function stDone(s){var c=0;for(var i=s*4;i<stEnd(s);i++)if(S.beat.indexOf(i)>=0)c++;return c}
+function mapView(){var d='M'+PT[0][0]+' '+PT[0][1];
+for(var i=1;i<PT.length;i++){var a=PT[i-1],b=PT[i],m=(a[1]+b[1])/2;d+='C'+a[0]+' '+m+' '+b[0]+' '+m+' '+b[0]+' '+b[1]}
+var g='',cur=-1;for(var q=0;q<PT.length;q++){if(stOpen(q)&&stDone(q)<stEnd(q)-q*4){cur=q;break}}
+PT.forEach(function(p,s){var op=stOpen(s),c=stDone(s),dn=c==stEnd(s)-s*4,fill=dn?'#3f8f4a':op?'#e8b04a':'#34505c';
+g+='<g'+(s==cur?' data-cur="1"':'')+' tabindex="0" role="button" aria-label="'+(s+1)+'. szint: '+SN[s]+'" style="cursor:pointer" onclick="openStage('+s+')" onkeydown="if(event.key==\'Enter\')openStage('+s+')">'+
+'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="36" fill="'+fill+'" stroke="#eef3ef" stroke-width="3"/>'+
+'<text x="'+p[0]+'" y="'+(p[1]+10)+'" text-anchor="middle" font-size="30" font-weight="bold" fill="'+(dn?'#fff':'#1b1608')+'">'+(op?(s+1):'🔒')+'</text>'+
+'<text x="'+p[0]+'" y="'+(p[1]+58)+'" text-anchor="middle" font-size="15" fill="#eef3ef">'+SN[s]+'</text>'+
+'<text x="'+p[0]+'" y="'+(p[1]+75)+'" text-anchor="middle" font-size="13" fill="#9bb3ba">'+(dn?'✔ teljesítve':c+'/'+(stEnd(s)-s*4)+' legyőzve')+'</text></g>'+
+'<text x="'+(p[0]<170?p[0]+66:p[0]-66)+'" y="'+(p[1]+10)+'" text-anchor="middle" font-size="30">'+DC[s]+'</text>'});
+return '<h2>Válassz szintet</h2><svg class="map" viewBox="0 0 360 '+VH+'" role="group" aria-label="Szintek térképe"><path d="'+d+'" stroke="#4b7080" stroke-width="6" stroke-dasharray="2 12" stroke-linecap="round" fill="none"/>'+g+'</svg><p class="hint">Koppints egy szintre, hogy lásd az ellenfeleket.</p>'+rules()}
+function stageView(){var s=B.s,h='<button class="btn alt" style="margin:0 0 6px" onclick="setTab(\'fight\')">← Térkép</button><h2>'+(s+1)+'. szint · '+SN[s]+'</h2>'+(s==2&&stOpen(2)?'<button class="btn alt" style="margin:0 0 8px" onclick="showIntro()">▶ Bevezető animáció újra</button>':'')+(stOpen(s)?'':'<div class="msg hint">🔒 Győzd le az előző szint mind a 4 ellenfelét egyszer, és megnyílik.</div>');
+for(var i=s*4;i<stEnd(s);i++)h+=oppBtn(i);return h+rules()}
+function fee(l){return l==0?Math.min(10,S.coins):10+5*l}function canPay(l){return l==0||S.coins>=fee(l)}function feeOf(i){return i==0?'max. 10 🪙':(10+5*i)+' 🪙'}
+function stOpen(s){if(s==0)return true;for(var i=(s-1)*4;i<s*4;i++)if(S.beat.indexOf(i)<0)return false;return true}
+function setTab(t){tab=t;V='list';shopCard=null;render()}
+function render(){
+document.getElementById('coins').textContent='🪙 '+S.coins;
+var n=[['fight','Harc'],['coll','Gyűjtemény'],['shop','Bolt']];
+document.getElementById('nav').innerHTML=n.map(function(x){return '<button class="'+(tab==x[0]?'on':'')+'" onclick="setTab(\''+x[0]+'\')">'+x[1]+'</button>'}).join('');
+document.getElementById('app').innerHTML=tab=='fight'?fightView():tab=='coll'?collView():shopView();if(tab=='fight'&&V=='list')setTimeout(function(){try{var e=document.querySelector('[data-cur]');if(e)window.scrollTo(0,Math.max(0,e.getBoundingClientRect().top+window.scrollY-window.innerHeight/2))}catch(x){}},0)}
+function rules(){return '<p class="hint">Harcban az elem dönt, bármilyen erős is a lap: 🔥 legyőzi a 🌿-t, a 🌿 a 💧-t és a 🔮-t, a 💧 a 🔥-t, a ⚙️ a 🔥-t, 💧-t és 🌿-t, a 🔮 varázs a ⚙️-t, 🔥-t és 💧-t. Azonos elemnél a nagyobb erő (10–100) nyer, egyenlő erőnél a magasabb szint (arany > ezüst > bronz), különben döntetlen. Az 1. szinten csak bronz lapokkal lehet harcolni, az ezüst, arany és gyémánt a 2. szinttől használható. A gyémánt lapok (100–150 erő) a Smaragd ládából nyílnak, a fém és varázs lényeknek nincs gyémánt változatuk.</p>'}
+function oppBtn(i){var o=O[i],lock=!stOpen(stOf(i)),done=S.beat.indexOf(i)>=0;
+return '<button class="opp'+(lock?' lock':'')+'"'+(lock||!canPay(i)?' disabled':' onclick="pick('+i+')"')+'><span class="em">'+o[1]+'</span><span><b>'+o[0]+(isBoss(i)?' · BOSS':'')+'</b>'+(done?' ✔':'')+'<small>'+o[2]+' · belépő: '+feeOf(i)+' · jutalom: +'+(10+15*i)+' 🪙'+(isBoss(i)?' + kártya'+(i==120&&!S.badge?' + jelvény':''):'')+'</small></span></button>'}
+function fightView(){
+if(V=='list')return mapView();if(V=='stage')return stageView();
+if(V=='pick'){var ids=owned().sort(function(a,b){return pw(b)-pw(a)});
+var ch=ids.map(function(k){return card(k,{sel:B.sel.indexOf(k)>=0,cnt:S.own[k],off:!allowed(k,B.l),fn:'tog('+k+')'})}).join('');
+return '<h2>Válassz 3 kártyát ('+B.sel.length+'/3)</h2>'+(B.l<4?'<div class="msg hint">Az 1. szinten csak bronz lapokkal lehet harcolni. Az ezüst és arany lapok a 2. szinttől használhatók.</div>':'')+'<div class="grid">'+ch+'</div><button class="btn" '+(B.sel.length<3?'disabled':'')+' onclick="startFight()">Harc indul: '+O[B.l][0]+' ellen · belépő: '+fee(B.l)+' 🪙</button><button class="btn alt" onclick="openStage(B.s)">Vissza</button>'}
+if(V=='fight'){
+var hand=B.mine.map(function(m,k){return card(m.id,{off:m.used||!!B.res,fn:'play('+k+')'})}).join('');
+var h='<div class="score"><span>Te: <b>'+B.w+'</b></span><span>Kör: '+Math.min(B.round+1,3)+'/3</span><span>'+O[B.l][1]+' <b>'+B.x+'</b></span></div>';
+if(B.res){var r=B.res;h+='<div class="arena">'+card(r.m,{big:1})+'<div class="vs">VS</div>'+card(r.a,{big:1})+'</div><div class="msg '+r.out+'">'+r.txt+'</div><button class="btn" onclick="nextRound()">'+(B.round>=2?'Eredmény':'Következő kör')+'</button>'}
+else h+='<div class="msg">Melyik kártyával harcolsz?</div>';
+return h+'<h2>Kezed</h2><div class="grid">'+hand+'</div>'}
+var e=B.end;return '<div class="msg"><div style="font-size:48px">'+e.ic+'</div><h2 class="'+e.cls+'">'+e.t+'</h2><p>'+B.w+' : '+B.x+' · '+(e.coins>0?'+':e.coins<0?'−':'±')+Math.abs(e.coins)+' 🪙</p></div>'+
+(e.unlock?'<div class="msg win">🔓 Megnyílt a '+(stOf(B.l)+2)+'. szint!</div>':'')+
+(e.card!==null?'<div class="msg">Új kártyát nyertél!</div><div style="max-width:160px;margin:0 auto">'+card(e.card,{big:1})+'</div>':'')+
+'<button class="btn"'+(canPay(B.l)?'':' disabled')+' onclick="pick('+B.l+')">Visszavágó</button><button class="btn alt" onclick="openStage(B.s)">Másik ellenfél</button>'}
+function pick(l){tab='fight';if(!canPay(l)){B={s:stOf(l)};V='stage';render();return}B={l:l,s:stOf(l),sel:[]};V='pick';render()}
+function tog(k){if(!allowed(k,B.l))return;var i=B.sel.indexOf(k);
+if(i>=0)B.sel.splice(i,1);else if(B.sel.length<3&&B.sel.filter(function(x){return x==k}).length<S.own[k])B.sel.push(k);render()}
+var PERM=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+function winp(ai,pl){var a=0,b=0;PERM.forEach(function(p){PERM.forEach(function(q){var w=0,x=0;for(var i=0;i<3;i++){var r=rr(pl[p[i]],ai[q[i]]);if(r>0)w++;else if(r<0)x++}if(x>w)a++;else if(x<w)b++})});return a+b?a/(a+b):.5}
+function aiDeck(o,pl){var pool=[];C.forEach(function(c,i){if(o[3].indexOf(c[4])>=0)o[4].forEach(function(l){if(l<4||hasD(i))pool.push(i*4+l-1)})});
+function one(){var q=pool.slice(),out=[];while(out.length<3&&q.length)out.push(q.splice(Math.floor(Math.random()*q.length),1)[0]);return out}
+var best=null,bd=9;for(var t=0;t<60;t++){var d=one();if(pl&&pl.length==3&&d.length==3){var s=Math.abs(winp(d,pl)-(B.l<4?.4:.45));if(s<bd){bd=s;best=d}}}
+return best||one()}
+function startFight(){if(!canPay(B.l))return;B.fee=fee(B.l);S.coins-=B.fee;save();B.mine=B.sel.map(function(k){return {id:k,used:false}});
+B.ai=aiDeck(O[B.l],B.sel).map(function(k){return {id:k,used:false}});B.round=0;B.w=0;B.x=0;B.res=null;V='fight';render()}
+function rr(m,a){var x=mult(m,a),y=mult(a,m);if(x>1&&y<=1)return 1;if(y>1&&x<=1)return -1;var p=pw(m),q=pw(a);if(p!=q)return p>q?1:-1;if(lv(m)!=lv(a))return lv(m)>lv(a)?1:-1;return 0}
+function play(k){if(B.res||B.mine[k].used)return;
+var left=[],m=B.mine[k].id,l=B.l;B.ai.forEach(function(a,i){if(!a.used)left.push(i)});
+var ai=rnd(left);
+B.mine[k].used=true;B.ai[ai].used=true;
+var a=B.ai[ai].id,pm=pw(m),pa=pw(a),r=rr(m,a),x=mult(m,a),y=mult(a,m),el=(x>1&&y<=1)||(y>1&&x<=1),out,txt,nums=' ('+pm+' : '+pa+')';
+if(r>0){B.w++;out='win';txt=el?'Nyertél, az elem döntött!'+nums:pm!=pa?'Nyertél!'+nums:'Egyenlő erő ('+pm+'), de a magasabb szint döntött: nyertél!'}
+else if(r<0){B.x++;out='lose';txt=el?'Veszítettél, az ellenfél eleme erősebb.'+nums:pm!=pa?'Veszítettél.'+nums:'Egyenlő erő ('+pm+'), de a magasabb szint döntött: veszítettél.'}
+else{out='draw';txt='Döntetlen: mindkettő '+pm+' erős.'}
+B.res={m:m,a:a,out:out,txt:txt};render()}
+function nextRound(){B.res=null;B.round++;if(B.round>=3)finish();else render()}
+function finish(){var l=B.l,e,st=stOf(l)+1,was=stOpen(st);
+if(B.w>B.x){e={t:'Győzelem!',cls:'win',ic:'🏆',coins:10+15*l,card:isBoss(l)?roll(2):null};
+if(S.beat.indexOf(l)<0)S.beat.push(l);e.unlock=st<30&&!was&&stOpen(st);if(l==120&&!S.badge){S.badge=1;e.badge=1}}
+else if(B.w<B.x){e={t:'Vereség',cls:'lose',ic:'💥',coins:-B.fee,card:null}}
+else{e={t:'Döntetlen',cls:'draw',ic:'🤝',coins:0,card:null}}
+S.coins+=B.fee+e.coins;if(e.card!==null)add(e.card);save();B.end=e;V='end';render();if(e.badge)setTimeout(showBadge,700)}
+function setCF(f){CF=CF==f?'':f;render()}
+function collView(){var seen=0,tot=0,n={T:[0,0],V:[0,0],F:[0,0],M:[0,0],Z:[0,0]},r='';
+C.forEach(function(c,i){var o=[0,1,2,3].some(function(l){return S.own[i*4+l]>0});if(o)seen++;c[2].split('').forEach(function(e){n[e][1]++;if(o)n[e][0]++})});
+owned().forEach(function(k){tot+=S.own[k]});
+C.forEach(function(c,i){if(CF&&c[2].indexOf(CF)<0)return;for(var l=0;l<(hasD(i)?4:3);l++){var id=i*4+l;if(l==3&&!S.own[id]&&!stOpen(5))continue;r+=card(id,S.own[id]>0?{cnt:S.own[id]}:{no:1})}});
+var ch=['T','V','F','M','Z'].map(function(e){return '<button class="chip'+(CF==e?' on':'')+'" onclick="setCF(\''+e+'\')">'+E[e].i+' '+E[e].n+' '+n[e][0]+'/'+n[e][1]+'</button>'}).join('');
+return '<h2>Lények: '+seen+'/'+C.length+' · kártyák: '+tot+'</h2><div class="chips">'+ch+'</div><p class="hint">Elemenként: megvan/összes lény. Koppints egy elemre a szűréshez.</p><div class="grid">'+r+'</div>'+(S.badge?'<button class="btn alt" onclick="showBadge()">🏅 Bajnoki jelvény megtekintése</button>':'')+rules()}
+function shopView(){var h='<h2>Kártyacsomagok</h2>';
+if(shopCard!==null)h+='<div style="max-width:160px;margin:10px auto">'+card(shopCard,{big:1})+'</div><div class="msg">'+(S.own[shopCard]>1?'Ez már megvolt, most '+S.own[shopCard]+' van belőle.':'Új kártya a gyűjteményben!')+'</div>';
+PK.forEach(function(p,k){var lk=p.need&&!stOpen(p.need);h+='<button class="opp'+(lk?' lock':'')+'"'+(lk||S.coins<p.p?' disabled':'')+' onclick="buy('+k+')"><span class="em">'+p.em+'</span><span><b>'+p.n+' · '+p.p+' 🪙</b><small>'+(lk?'🔒 Az '+p.need+'. szint mind a 4 ellenfelének legyőzése után nyílik':p.d)+'</small></span></button>'});
+return h+(S.coins<30?'<p class="hint">Nincs elég érméd. Nyerj harcokat!</p>':'')}
+function buy(k){var p=PK[k];if(S.coins<p.p||(p.need&&!stOpen(p.need)))return;S.coins-=p.p;shopCard=roll(k);add(shopCard);save();render()}
+render();
+
+</script>
+</body>
+</html>
